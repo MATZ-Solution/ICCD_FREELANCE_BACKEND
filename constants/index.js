@@ -1,0 +1,4 @@
+exports.CLIENT_ID='623531353635-7r5g9im354lep7g3orqchrak822teltb.apps.googleusercontent.com'
+exports.CLIENT_SECRET='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'
+exports.EMAIL_HOST='solutions.matz@gmail.com'
+exports.REFRESH_TOKEN='1//04H5awHGWQ5bdCgYIARAAGAQSNwF-L9IrgnTfdc5ha22qNzrLtyz8uiy2JmbfLn7AIrZx9LMXYmHwc_JoQH2mf7avMshXa14hZOg'
