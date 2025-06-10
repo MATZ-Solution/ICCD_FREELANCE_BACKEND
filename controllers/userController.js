@@ -15,7 +15,7 @@ exports.signUp = async function (req, res) {
     if (selectResult[0].length > 0) {
       return res.status(404).json({
         statusCode: 200,
-        message: `User already exists on this email ${email}`,
+        message: `User already exists on this email`,
       });
     }
     const hashPassword = await bcrypt.hash(password, 10);
