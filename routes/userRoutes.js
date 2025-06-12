@@ -5,6 +5,11 @@ const {verifyToken} = require('../middleware/authenticate')
 
 router.post("/signUp", userController.signUp);
 router.post("/signIn", userController.signIn);
+router.post("/passwordReset", userController.passwordReset);
+router.post("/sendOtp", userController.sendOtp);
+router.post("/submitOtp", userController.submitOtp);
+router.post("/changePasword", userController.changePasword);
+
 
 
 router.get("/checkapi",verifyToken, userController.check); 
