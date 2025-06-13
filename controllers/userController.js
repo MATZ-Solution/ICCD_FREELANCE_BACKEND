@@ -118,7 +118,7 @@ exports.passwordReset = async function (req, res) {
 
 exports.sendOtp = async function (req, res) {
   const { email } = req.body;
-  console.log("email: ", email)
+  console.log("email: ", email);
   // const date = new Date()
   // console.log("date: ", date)
   try {
@@ -139,9 +139,9 @@ exports.sendOtp = async function (req, res) {
         // Send email
         sendEmail(
           findUser[0][0]?.email,
-          'password reset',
+          "password reset",
           `your otp code is ${pin}`
-        )
+        );
         return res.status(200).json({ message: "Email send successfully." });
       } else {
         return res.status(404).json({ message: "Failed to send email." });
@@ -168,7 +168,7 @@ exports.submitOtp = async function (req, res) {
 
     if (findUserResult[0].length > 0) {
       // CHECK USER PROVIDED OTP AND DATABASE OTP MATCH OR NOT
-      
+
       if (findUserResult[0][0]?.otp === otp) {
         return res.status(200).json({ message: "Otp match successfully" });
       } else {
@@ -177,7 +177,6 @@ exports.submitOtp = async function (req, res) {
     } else {
       return res.status(404).json({ message: "Email not found" });
     }
-
   } catch (error) {
     console.log("error", error);
     return res.status(500).json({
@@ -217,6 +216,36 @@ exports.changePasword = async function (req, res) {
     } else {
       return res.status(404).json({ message: "Email not found" });
     }
+  } catch (error) {
+    console.log("error", error);
+    return res.status(500).json({
+      statusCode: 500,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+exports.addFreelancerDetails = async function (req, res) {
+  const { name, gigs } = req.body;
+  console.log("req.body: ", req.body);
+  console.log("files: ", req.files);
+  try {
+    if (req.files.length > 0) {
+      for (const file of req.files) {
+        const insertFileResult = await queryRunner(
+          "INSERT INTO location_files (scouted_location, fileUrl, fileKey) VALUES (?, ?, ?)",
+          [scoutId, file.location, file.key]
+        );
+         if (insertFileResult.affectedRows <= 0) {
+            return res.status(500).json({
+              statusCode: 500,
+              message: "Failed to add files",
+            });
+          }
+      }
+    }
+    return res.status(200).json({ message: "api is working fine." });
   } catch (error) {
     console.log("error", error);
     return res.status(500).json({

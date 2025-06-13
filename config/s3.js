@@ -8,8 +8,8 @@
 
 module.exports = {
     bucketName: 'powerhouseassets',
-    awsAccessKeyId: "AKIAQPZG37TR7KS53BPT",
-    awsSecretAccessKey: "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",
+    awsAccessKeyId: "AKIAQPZG37TR6DHUMMSD",
+    awsSecretAccessKey: "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",
     region: 'us-east-1',
   };
   
