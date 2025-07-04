@@ -61,9 +61,8 @@ exports.signIn = async function (req, res) {
     const checkPass = await bcrypt.compare(password, findUser[0][0].password);
     if (!checkPass)
       return res.status(401).json({ message: "Invalid email or password" });
-
     const token = jwt.sign(
-      { id: findUser[0][0]?.id, email: findUser[0][0]?.email },
+      { userId: findUser[0][0]?.id, email: findUser[0][0]?.email },
       "1dikjsaciwndvc",
       {
         expiresIn: "7d",
@@ -237,12 +236,12 @@ exports.addFreelancerDetails = async function (req, res) {
           "INSERT INTO location_files (scouted_location, fileUrl, fileKey) VALUES (?, ?, ?)",
           [scoutId, file.location, file.key]
         );
-         if (insertFileResult.affectedRows <= 0) {
-            return res.status(500).json({
-              statusCode: 500,
-              message: "Failed to add files",
-            });
-          }
+        if (insertFileResult.affectedRows <= 0) {
+          return res.status(500).json({
+            statusCode: 500,
+            message: "Failed to add files",
+          });
+        }
       }
     }
     return res.status(200).json({ message: "api is working fine." });
