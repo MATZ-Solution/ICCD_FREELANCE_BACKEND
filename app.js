@@ -7,6 +7,7 @@ const socketHandler = require('./utils/socketHandler')
 
 const userRoutes = require('./routes/userRoutes')
 const projectRoutes = require('./routes/projectRoutes')
+const gigsRoutes = require('./routes/gigsRoutes')
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerFile = require('./swagger/swagger-output.json'); 
@@ -52,6 +53,7 @@ getConnectionFromPool();
 app.use("/", userRoutes);
 app.use("/project", projectRoutes);
 app.use("/job", projectRoutes);
+app.use("/gigs", gigsRoutes);
 // app.use("/MeetingMembers", MeetingMembersRoutes);
 // app.use("/notify", notificationRoutes);
 // app.use("/dashboard", dashboardRoutes);
