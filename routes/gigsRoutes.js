@@ -4,8 +4,10 @@ const gigsController = require("../controllers/gigsController");
 const { verifyToken } = require("../middleware/authenticate");
 const s3Upload = require('../middleware/s3Upload');
 
-//  s3Upload.array('files', 5)
-// router.post("/addJob" ,verifyToken, s3Upload.array('files', 5), jobController.addJob);
-router.post('/postGigs', gigsController.postGigs)
+
+router.get('/getGigs', gigsController.getAllGigs)
+router.get('/getSingleGigs/:gigID', gigsController.getSingleGigs)
+
+router.post('/addGigs', verifyToken, s3Upload.array('files', 5), gigsController.addGigs)
 
 module.exports = router;
