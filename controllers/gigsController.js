@@ -66,9 +66,10 @@ exports.addGigs = async function (req, res) {
 
 exports.getAllGigs = async (req, res) => {
   const { search } = req.query;
+  console.log("search: ", search)
   let queryParams = [];
   try {
-    const getProjectQuery = `
+    let getProjectQuery = `
     SELECT 
         g.*,
         u.name,
@@ -76,12 +77,12 @@ exports.getAllGigs = async (req, res) => {
       FROM gigs g
       LEFT JOIN users u ON u.id = g.userID
       LEFT JOIN gigsfiles gf ON gf.gigID = g.id
-      GROUP BY g.id;
       `;
 
     if (search) {
-      getProjectQuery += ` WHERE g.title LIKE ? OR g.description LIKE %${search}% `;
+      getProjectQuery += ` WHERE g.title LIKE '%${search}%' OR g.description LIKE '%${search}%' `;
     }
+    getProjectQuery += ` GROUP BY g.id `;
     const selectResult = await queryRunner(getProjectQuery);
     // console.log("getData: ", getData)
 
@@ -115,7 +116,9 @@ exports.getSingleGigs = async (req, res) => {
   const { gigID } = req.params;
   try {
     const getProjectQuery = `
-      SELECT g.*, u.name as username, GROUP_CONCAT(DISTINCT(gf.fileUrl)) as gigsFiles, p.title as packageTitle,p.id as packageID, p.name, p.deliveryTime, p.revisions, p.gigID
+      SELECT g.id as gigsID, g.title, g.description, g.category, g.userID as freelancerID,  
+      u.name as username, GROUP_CONCAT(DISTINCT(gf.fileUrl)) as gigsFiles,
+      p.title as packageTitle,p.id as packageID, p.name, p.deliveryTime, p.revisions, p.gigID
       FROM gigs g
       JOIN gigsfiles gf ON gf.gigID = g.id
       JOIN packages p ON p.gigID = g.id
@@ -125,33 +128,35 @@ exports.getSingleGigs = async (req, res) => {
       `;
 
     const selectResult = await queryRunner(getProjectQuery, [gigID]);
+    console.log("selectResult: ", selectResult[0])
     const {
-      id,
+      gigsID,
       title,
       username,
       description,
       category,
       subCategory,
-      userID,
+      freelancerID,
       created_at,
       gigsFiles
     } = selectResult[0][0];
 
     const getPackages = selectResult[0].map((item) => ({
       name: item.name,
+      packageID: item.packageID,
       packageTitle: item.packageTitle,
       deliveryTime: item.deliveryTime,
       revisions: item.revisions,
     }));
 
     const filterData = {
-      id,
+      gigsID,
       title,
       username,
       description,
       category,
       subCategory,
-      userID,
+      freelancerID,
       created_at,
       gigsFiles: gigsFiles.split(','),
       packages: getPackages,
@@ -186,11 +191,11 @@ exports.getGigsByUser = async (req, res) => {
   console.log("userId: ", userId)
   try {
     const getProjectQuery = `
-    SELECT u.id as users, g.*, GROUP_CONCAT(DISTINCT(gf.fileUrl)) AS gigsFiles, gf.id as gigFileID , gf.fileKey, gf.created_at, gf.gigID
+    SELECT  g.*, GROUP_CONCAT(DISTINCT(gf.fileUrl)) AS gigsFiles, gf.id as gigFileID , gf.fileKey, gf.created_at, gf.gigID
      FROM gigs g 
-    JOIN users u ON u.id = g.userID
-    JOIN gigsfiles gf ON gf.gigID = g.id
+    LEFT JOIN gigsfiles gf ON gf.gigID = g.id
     GROUP BY g.id
+    HAVING g.userID = ?
     `;
 
     const selectResult = await queryRunner(getProjectQuery, [userId]);
