@@ -115,18 +115,16 @@ exports.getSingleGigs = async (req, res) => {
   const { gigID } = req.params;
   try {
     const getProjectQuery = `
-      SELECT g.*, u.name as username, gf.fileUrl, p.title as packageTitle,p.id as packageID, p.name, p.deliveryTime, p.revisions, p.gigID
+      SELECT g.*, u.name as username, GROUP_CONCAT(DISTINCT(gf.fileUrl)) as gigsFiles, p.title as packageTitle,p.id as packageID, p.name, p.deliveryTime, p.revisions, p.gigID
       FROM gigs g
       JOIN gigsfiles gf ON gf.gigID = g.id
       JOIN packages p ON p.gigID = g.id
       LEFT JOIN users u ON u.id = g.userID
       WHERE g.id = ?
+      GROUP BY p.name
       `;
 
     const selectResult = await queryRunner(getProjectQuery, [gigID]);
-    console.log("selectResult: ", selectResult[0]);
-
-
     const {
       id,
       title,
@@ -136,6 +134,7 @@ exports.getSingleGigs = async (req, res) => {
       subCategory,
       userID,
       created_at,
+      gigsFiles
     } = selectResult[0][0];
 
     const getPackages = selectResult[0].map((item) => ({
@@ -144,10 +143,6 @@ exports.getSingleGigs = async (req, res) => {
       deliveryTime: item.deliveryTime,
       revisions: item.revisions,
     }));
-
-    
-const packages = [...new Set(selectResult[0].map((item) => item.fileUrl))];
-    const getFiles = [...new Set(selectResult[0].map((item) => item.fileUrl))];
 
     const filterData = {
       id,
@@ -158,7 +153,7 @@ const packages = [...new Set(selectResult[0].map((item) => item.fileUrl))];
       subCategory,
       userID,
       created_at,
-      gigFiles: getFiles,
+      gigsFiles: gigsFiles.split(','),
       packages: getPackages,
     };
 
@@ -169,6 +164,48 @@ const packages = [...new Set(selectResult[0].map((item) => item.fileUrl))];
         // data: selectResult[0]
         data: filterData,
         // data2: filter,
+      });
+    } else {
+      res.status(200).json({
+        data: [],
+        message: "Gigs Not Found",
+      });
+    }
+  } catch (error) {
+    console.error("Query error: ", error);
+    return res.status(500).json({
+      statusCode: 500,
+      message: "Failed to get gigs",
+      error: error.message,
+    });
+  }
+};
+
+exports.getGigsByUser = async (req, res) => {
+  const { userId } = req.user;
+  console.log("userId: ", userId)
+  try {
+    const getProjectQuery = `
+    SELECT u.id as users, g.*, GROUP_CONCAT(DISTINCT(gf.fileUrl)) AS gigsFiles, gf.id as gigFileID , gf.fileKey, gf.created_at, gf.gigID
+     FROM gigs g 
+    JOIN users u ON u.id = g.userID
+    JOIN gigsfiles gf ON gf.gigID = g.id
+    GROUP BY g.id
+    `;
+
+    const selectResult = await queryRunner(getProjectQuery, [userId]);
+
+    const filterData = selectResult[0].map((item) => ({
+      ...item,
+      gigsFiles: item.gigsFiles.split(',')[0]
+    }))
+
+    if (selectResult[0].length > 0) {
+      res.status(200).json({
+        statusCode: 200,
+        message: "Success",
+        // data: selectResult[0]
+        data: filterData
       });
     } else {
       res.status(200).json({
