@@ -65,23 +65,29 @@ exports.addGigs = async function (req, res) {
 };
 
 exports.getAllGigs = async (req, res) => {
-  const { search } = req.body;
+  const { search } = req.query;
+  let queryParams = [];
   try {
     const getProjectQuery = `
-      SELECT g.*, u.name, gf.fileUrl
+    SELECT 
+        g.*,
+        u.name,
+        GROUP_CONCAT(gf.fileUrl) AS fileUrls
       FROM gigs g
       LEFT JOIN users u ON u.id = g.userID
       LEFT JOIN gigsfiles gf ON gf.gigID = g.id
-      WHERE g.title LIKE ? OR g.description LIKE ?
+      GROUP BY g.id;
       `;
 
-    const searchTerm = `%${search}%`;
+    if (search) {
+      getProjectQuery += ` WHERE g.title LIKE ? OR g.description LIKE %${search}% `;
+    }
+    const selectResult = await queryRunner(getProjectQuery);
+    // console.log("getData: ", getData)
 
-    // Use parameterized query to prevent SQL injection
-    const selectResult = await queryRunner(getProjectQuery, [
-      searchTerm,
-      searchTerm,
-    ]);
+    // const getData = selectResult[0].filter((data)=> data.id);
+    // console.log("getData: ", getData)
+    // const getFiles = [...new Set(selectResult[0].map((item) => item.fileUrl))];
 
     if (selectResult[0].length > 0) {
       res.status(200).json({
@@ -109,9 +115,9 @@ exports.getSingleGigs = async (req, res) => {
   const { gigID } = req.params;
   try {
     const getProjectQuery = `
-      SELECT g.*, u.name, 
-      p.title as packageTitle, p.name, p.deliveryTime, p.revisions, p.gigID
+      SELECT g.*, u.name as username, gf.fileUrl, p.title as packageTitle,p.id as packageID, p.name, p.deliveryTime, p.revisions, p.gigID
       FROM gigs g
+      JOIN gigsfiles gf ON gf.gigID = g.id
       JOIN packages p ON p.gigID = g.id
       LEFT JOIN users u ON u.id = g.userID
       WHERE g.id = ?
@@ -119,19 +125,50 @@ exports.getSingleGigs = async (req, res) => {
 
     const selectResult = await queryRunner(getProjectQuery, [gigID]);
     console.log("selectResult: ", selectResult[0]);
-    let arr = [];
+
+
+    const {
+      id,
+      title,
+      username,
+      description,
+      category,
+      subCategory,
+      userID,
+      created_at,
+    } = selectResult[0][0];
+
+    const getPackages = selectResult[0].map((item) => ({
+      name: item.name,
+      packageTitle: item.packageTitle,
+      deliveryTime: item.deliveryTime,
+      revisions: item.revisions,
+    }));
+
+    
+const packages = [...new Set(selectResult[0].map((item) => item.fileUrl))];
+    const getFiles = [...new Set(selectResult[0].map((item) => item.fileUrl))];
+
+    const filterData = {
+      id,
+      title,
+      username,
+      description,
+      category,
+      subCategory,
+      userID,
+      created_at,
+      gigFiles: getFiles,
+      packages: getPackages,
+    };
+
     if (selectResult[0].length > 0) {
-      const filter = selectResult[0].map((item) => {
-        return { name: "sohaib" };
-      });
-
-      console.log("filter: ", filter);
-
       res.status(200).json({
         statusCode: 200,
         message: "Success",
-        // data: selectResult[0],
-        data2: filter,
+        // data: selectResult[0]
+        data: filterData,
+        // data2: filter,
       });
     } else {
       res.status(200).json({
