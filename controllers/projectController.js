@@ -3,28 +3,26 @@ const { queryRunner } = require("../helper/queryRunner");
 exports.addProject = async function (req, res) {
   const { userId } = req.user;
   const {
-    companyName,
-    companyContactNumber,
-    jobTitle,
-    joblocationType,
-    jobType,
-    jobDescription,
-    hiringTimeline,
+    projectTitle,
+    category,
+    subCategory,
+    skills,
+    projectDescription,
+    budget,
+    deadline,
   } = req.body;
 
   try {
     // Add project into database
-    const insertProjectQuery = `INSERT INTO jobs( projectTitle, skills, budget, projectDescription, clientID, category, milestoneTitle, milestoneDueDate, milestoneAmount) VALUES (?,?,?,?,?,?,?,?,?) `;
+    const insertProjectQuery = `INSERT INTO projects( projectTitle,category, subCategory, skills,projectDescription, budget, deadline , clientID ) VALUES (?,?,?,?,?,?,?,?) `;
     const queryParams = [
       projectTitle,
-      skills,
-      budget,
-      projectDescription,
-      userId,
       category,
-      milestoneTitle,
-      milestoneDueDate,
-      milestoneAmount,
+      subCategory,
+      skills,
+      projectDescription,
+      budget,
+      deadline,
     ];
     const insertFileResult = await queryRunner(insertProjectQuery, queryParams);
 
@@ -48,17 +46,17 @@ exports.addProject = async function (req, res) {
     } else {
       return res.status(200).json({
         statusCode: 200,
-        message: "Failed to add job",
+        message: "Failed to add Project",
       });
     }
     res.status(200).json({
       statusCode: 200,
-      message: "Job Created successfully",
+      message: "Project Created successfully",
     });
   } catch (error) {
     console.log("Error: ", error);
     return res.status(500).json({
-      message: "Failed to add Job",
+      message: "Failed to add Project",
       message: error.message,
     });
   }
