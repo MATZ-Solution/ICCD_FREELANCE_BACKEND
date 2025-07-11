@@ -3,8 +3,11 @@ const { queryRunner } = require("../helper/queryRunner");
 exports.addGigs = async function (req, res) {
   const { userId } = req.user;
   const { gigsTitle, category, subCategory, description, packages } = req.body;
+  console.log("req: ", req.body)
 
   try {
+
+
     // Add project into database
     const insertGigsQuery = `INSERT INTO gigs(title, description, category, subCategory, userID) VALUES (?,?,?,?,?) `;
     const queryParamsGigs = [
@@ -21,10 +24,17 @@ exports.addGigs = async function (req, res) {
       queryParamsGigs
     );
 
+    console.log("############# 1 #################")
+
+
     // add packages in packages table
     const gigId = insertGigsResult[0].insertId;
+
     const parsedPackages = JSON.parse(packages);
+
+
     for (const key of ["basic", "standard", "premium"]) {
+      console.log("2")
       const pkg = parsedPackages[key];
       if (!pkg) continue;
       const { name, title, delivery, revisions, price } = pkg;
@@ -191,18 +201,18 @@ exports.getGigsByUser = async (req, res) => {
   console.log("userId: ", userId)
   try {
     const getProjectQuery = `
-    SELECT  g.*, GROUP_CONCAT(DISTINCT(gf.fileUrl)) AS gigsFiles, gf.id as gigFileID , gf.fileKey, gf.created_at, gf.gigID
-     FROM gigs g 
+    SELECT  g.*, GROUP_CONCAT(gf.fileUrl) AS gigsFiles
+    FROM gigs g 
     LEFT JOIN gigsfiles gf ON gf.gigID = g.id
+    WHERE g.userID = ?
     GROUP BY g.id
-    HAVING g.userID = ?
     `;
 
     const selectResult = await queryRunner(getProjectQuery, [userId]);
 
     const filterData = selectResult[0].map((item) => ({
       ...item,
-      gigsFiles: item.gigsFiles.split(',')[0]
+      gigsFiles: item.gigsFiles ? item.gigsFiles.split(',')[0] : []
     }))
 
     if (selectResult[0].length > 0) {

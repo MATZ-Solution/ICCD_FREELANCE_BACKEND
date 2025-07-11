@@ -8,6 +8,7 @@ const socketHandler = require('./utils/socketHandler')
 const userRoutes = require('./routes/userRoutes')
 const projectRoutes = require('./routes/projectRoutes')
 const gigsRoutes = require('./routes/gigsRoutes')
+const freelancerRoutes = require('./routes/freelancerRoutes')
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerFile = require('./swagger/swagger-output.json'); 
@@ -54,6 +55,7 @@ app.use("/", userRoutes);
 app.use("/project", projectRoutes);
 app.use("/job", projectRoutes);
 app.use("/gigs", gigsRoutes);
+app.use("/freelancer", freelancerRoutes);
 // app.use("/MeetingMembers", MeetingMembersRoutes);
 // app.use("/notify", notificationRoutes);
 // app.use("/dashboard", dashboardRoutes);
