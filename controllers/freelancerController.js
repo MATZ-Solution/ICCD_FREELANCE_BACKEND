@@ -76,28 +76,43 @@ exports.getFreelancerProfile = async (req, res) => {
   }
 };
 
-exports.editProfile = async function (req, res) {
+exports.addProfile = async function (req, res) {
   const { userId } = req.user;
   const {
-    name,
+    firstName,
+    lastName,
     languages,
     about_tagline,
     about_description,
     educations,
     certifications,
     skills,
+    freelancerId
   } = req.body;
 
-  console.log("langguages: ", languages)
-
   try {
-    // Add project into database
 
+    console.log("freelancerId: ", freelancerId)
+    let languagesArray;
+    if (languages && languages.length > 0) {
+      languagesArray = JSON.parse(languages)
+    }
+
+    let skillsArray;
+    if (skills && skills.length > 0) {
+      skillsArray = JSON.parse(skills)
+    }
+
+    // Add project into database
     let fields = [];
     let column = [];
-    if (name) {
-      fields.push(name);
-      column.push("name");
+    if (firstName) {
+      fields.push(firstName);
+      column.push("firstName");
+    }
+    if (lastName) {
+      fields.push(lastName);
+      column.push("lastName");
     }
     if (about_tagline) {
       fields.push(about_tagline);
@@ -108,16 +123,18 @@ exports.editProfile = async function (req, res) {
       column.push("about_description");
     }
 
+    let freelancerResult;
+
     if (fields && fields.length > 0) {
-      fields.push(userId);
       const insertProjectQuery = `INSERT INTO freelancers(${column.map(item => item).join(',')}) VALUES (${fields.map(item => '?').join(',')})`;
       const insertFileResult = await queryRunner(insertProjectQuery, fields);
+      freelancerResult = insertFileResult
     }
 
-    if (languages && languages.length > 0) {
-      for (const language of languages) {
-        const insertLanguagesQuery = `INSERT INTO freelancer_languages( name, freelancer_id ) VALUES (?,?)`;
-        const queryParams = [language.language, userId];
+    if (languagesArray && languagesArray.length > 0) {
+      for (const i of languagesArray) {
+        const insertLanguagesQuery = `INSERT INTO freelancers_languages( language_name, freelancer_id ) VALUES (?,?)`;
+        const queryParams = [i.language, userId];
         const insertLanguagesResult = await queryRunner(
           insertLanguagesQuery,
           queryParams
@@ -125,43 +142,43 @@ exports.editProfile = async function (req, res) {
       }
     }
 
-    if (educations && educations.length > 0) {
-      for (const education of educations) {
-        const insertEducationstQuery = `INSERT INTO freelancer_education( university_name, country, degree, year, freelancer_id ) VALUES (?,?,?) `;
-        const queryParams = [
-          education.university_name,
-          education.country,
-          education.degree,
-          education.year,
-          userId,
-        ];
-        const insertEducationResult = await queryRunner(
-          insertEducationstQuery,
-          queryParams
-        );
-      }
-    }
+    // if (educations && educations.length > 0) {
+    //   for (const education of educations) {
+    //     const insertEducationstQuery = `INSERT INTO freelancer_education( university_name, country, degree, year, freelancer_id ) VALUES (?,?,?) `;
+    //     const queryParams = [
+    //       education.university_name,
+    //       education.country,
+    //       education.degree,
+    //       education.year,
+    //       userId,
+    //     ];
+    //     const insertEducationResult = await queryRunner(
+    //       insertEducationstQuery,
+    //       queryParams
+    //     );
+    //   }
+    // }
 
-    if (certifications && certifications.length > 0) {
-      for (const certification of certifications) {
-        const insertCertificationstQuery = `INSERT INTO freelancer_certificate( certificate_name, awarded_by, year, freelancer_id ) VALUES (?,?,?) `;
-        const queryParams = [
-          certification.certificate_name,
-          certification.awarded_by,
-          certification.year,
-          userId,
-        ];
-        const insertCertificationsResult = await queryRunner(
-          insertCertificationstQuery,
-          queryParams
-        );
-      }
-    }
+    // if (certifications && certifications.length > 0) {
+    //   for (const certification of certifications) {
+    //     const insertCertificationstQuery = `INSERT INTO freelancer_certificate( certificate_name, awarded_by, year, freelancer_id ) VALUES (?,?,?) `;
+    //     const queryParams = [
+    //       certification.certificate_name,
+    //       certification.awarded_by,
+    //       certification.year,
+    //       userId,
+    //     ];
+    //     const insertCertificationsResult = await queryRunner(
+    //       insertCertificationstQuery,
+    //       queryParams
+    //     );
+    //   }
+    // }
 
-    if (skills && skills.length > 0) {
-      for (const skill of skills) {
-        const insertSkillstQuery = `INSERT INTO freelancer_skills( skill_name, experience_level, freelancer_id ) VALUES (?,?,?) `;
-        const queryParams = [skill.skill_name, skill.experience_level, userId];
+    if (skillsArray && skillsArray.length > 0) {
+      for (const skill of skillsArray) {
+        const insertSkillstQuery = `INSERT INTO freelancer_skills( skill, level, freelancer_id ) VALUES (?,?,?) `;
+        const queryParams = [skill.skill, skill.level, freelancerId];
         const insertSkillsResult = await queryRunner(
           insertSkillstQuery,
           queryParams
@@ -170,31 +187,34 @@ exports.editProfile = async function (req, res) {
     }
 
     // Add files into database
-    // if (insertFileResult[0].affectedRows > 0) {
-    //     let projectID = insertFileResult[0].insertId;
-    //     if (req.files.length > 0) {
-    //         for (const file of req.files) {
-    //             const insertFileResult = await queryRunner(
-    //                 "INSERT INTO projectfiles (fileUrl, fileKey, projectID) VALUES (?, ?, ?)",
-    //                 [file.location, file.key, projectID]
-    //             );
-    //             if (insertFileResult.affectedRows <= 0) {
-    //                 return res.status(500).json({
-    //                     statusCode: 500,
-    //                     message: "Failed to add files",
-    //                 });
-    //             }
-    //         }
-    //     }
-    // } else {
-    //     return res.status(200).json({
-    //         statusCode: 200,
-    //         message: "Failed to add Project",
-    //     });
-    // }
+    if (freelancerResult && freelancerResult[0].affectedRows > 0) {
+      let freelancerId = freelancerResult[0].insertId
+      if (req.files.length > 0) {
+        for (const file of req.files) {
+          const insertFileResult = await queryRunner(
+            `UPDATE freelancers
+              SET fileUrl = ?, fileKey = ?, userID = ?
+              WHERE id = ?`,
+            [file.location, file.key, userId, freelancerId]
+          );
+          if (insertFileResult.affectedRows <= 0) {
+            return res.status(500).json({
+              statusCode: 500,
+              message: "Failed to add files",
+            });
+          }
+        }
+      }
+    } else {
+      return res.status(200).json({
+        statusCode: 200,
+        message: "Failed to add Project",
+      });
+    }
     res.status(200).json({
       statusCode: 200,
       message: "Profile Edit successfully",
+      freelancerId: freelancerResult[0].insertId
     });
   } catch (error) {
     console.log("Error: ", error);
