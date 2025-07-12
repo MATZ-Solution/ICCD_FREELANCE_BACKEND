@@ -13,6 +13,8 @@ exports.signUp = async function (req, res) {
       email,
     ]);
 
+    console.log("selectResult: ", selectResult[0]);
+
     if (selectResult[0].length > 0) {
       return res.status(404).json({
         statusCode: 200,
@@ -27,6 +29,7 @@ exports.signUp = async function (req, res) {
       hashPassword,
       // currentDate,
     ]);
+
     if (insertResult[0].affectedRows > 0) {
       return res.status(200).json({
         message: "User added successfully",
@@ -263,3 +266,5 @@ exports.check = async function (req, res) {
     return res.status(500).json({ message: "Internal Server Error " });
   }
 };
+
+
