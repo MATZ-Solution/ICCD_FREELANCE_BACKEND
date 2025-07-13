@@ -84,15 +84,15 @@ exports.addProfile = async function (req, res) {
     languages,
     about_tagline,
     about_description,
-    educations,
+    education,
     certifications,
     skills,
-    freelancerId
   } = req.body;
+
+  console.log("education: ", education)
 
   try {
 
-    console.log("freelancerId: ", freelancerId)
     let languagesArray;
     if (languages && languages.length > 0) {
       languagesArray = JSON.parse(languages)
@@ -101,6 +101,16 @@ exports.addProfile = async function (req, res) {
     let skillsArray;
     if (skills && skills.length > 0) {
       skillsArray = JSON.parse(skills)
+    }
+
+    let certificationArray;
+    if (certifications && certifications.length > 0) {
+      certificationArray = JSON.parse(certifications)
+    }
+
+    let educationArray;
+    if (education && education.length > 0) {
+      educationArray = JSON.parse(education)
     }
 
     // Add project into database
@@ -131,10 +141,12 @@ exports.addProfile = async function (req, res) {
       freelancerResult = insertFileResult
     }
 
+    let freelancerId = freelancerResult[0].insertId
+
     if (languagesArray && languagesArray.length > 0) {
       for (const i of languagesArray) {
         const insertLanguagesQuery = `INSERT INTO freelancers_languages( language_name, freelancer_id ) VALUES (?,?)`;
-        const queryParams = [i.language, userId];
+        const queryParams = [i.language, freelancerId];
         const insertLanguagesResult = await queryRunner(
           insertLanguagesQuery,
           queryParams
@@ -142,38 +154,41 @@ exports.addProfile = async function (req, res) {
       }
     }
 
-    // if (educations && educations.length > 0) {
-    //   for (const education of educations) {
-    //     const insertEducationstQuery = `INSERT INTO freelancer_education( university_name, country, degree, year, freelancer_id ) VALUES (?,?,?) `;
-    //     const queryParams = [
-    //       education.university_name,
-    //       education.country,
-    //       education.degree,
-    //       education.year,
-    //       userId,
-    //     ];
-    //     const insertEducationResult = await queryRunner(
-    //       insertEducationstQuery,
-    //       queryParams
-    //     );
-    //   }
-    // }
+    if (educationArray && educationArray.length > 0) {
+      for (const edu of educationArray) {
+        const insertEducationstQuery = `INSERT INTO freelancer_education( university_name, country, degree, major, year, freelancer_id ) VALUES (?,?,?,?,?,?) `;
+        
+        const queryParams = [
+          edu.institution,
+          edu.level,
+          edu.title,
+          edu.major,
+          edu.year,
+          freelancerId,
+        ];
+        console.log("queryParams: ", queryParams)
+        const insertEducationResult = await queryRunner(
+          insertEducationstQuery,
+          queryParams
+        );
+      }
+    }
 
-    // if (certifications && certifications.length > 0) {
-    //   for (const certification of certifications) {
-    //     const insertCertificationstQuery = `INSERT INTO freelancer_certificate( certificate_name, awarded_by, year, freelancer_id ) VALUES (?,?,?) `;
-    //     const queryParams = [
-    //       certification.certificate_name,
-    //       certification.awarded_by,
-    //       certification.year,
-    //       userId,
-    //     ];
-    //     const insertCertificationsResult = await queryRunner(
-    //       insertCertificationstQuery,
-    //       queryParams
-    //     );
-    //   }
-    // }
+    if (certificationArray && certificationArray.length > 0) {
+      for (const certification of certificationArray) {
+        const insertCertificationstQuery = `INSERT INTO freelancer_certificate( certificate_name, awarded_by, year, freelancer_id ) VALUES (?,?,?,?) `;
+        const queryParams = [
+          certification.name,
+          certification.from,
+          certification.year,
+          freelancerId,
+        ];
+        const insertCertificationsResult = await queryRunner(
+          insertCertificationstQuery,
+          queryParams
+        );
+      }
+    }
 
     if (skillsArray && skillsArray.length > 0) {
       for (const skill of skillsArray) {
@@ -210,7 +225,7 @@ exports.addProfile = async function (req, res) {
         statusCode: 200,
         message: "Failed to add Project",
       });
-    }
+    }''
     res.status(200).json({
       statusCode: 200,
       message: "Profile Edit successfully",
