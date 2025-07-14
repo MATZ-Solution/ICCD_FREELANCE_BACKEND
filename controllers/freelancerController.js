@@ -57,7 +57,7 @@ exports.getFreelancerProfile = async (req, res) => {
     let name = selectResult[0][0]?.skills?.split(',')
     let level = selectResult[0][0]?.levels?.split(',')
     for (let i = 0; i <= name.length - 1; i++) {
-      emptyArray.push({ name: name[i], level: level[i] })
+      emptyArray.push({ skill: name[i], level: level[i] })
     }
 
     const filterData = selectResult[0].map((item) => ({
