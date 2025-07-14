@@ -10,4 +10,7 @@ router.get("/checkIsFreelancer" ,verifyToken, freelancerController.checkIsFreela
 
 router.post("/addProfile" ,verifyToken, s3Upload.array('files', 5), freelancerController.addProfile);
 
+router.put("/editProfile/:freelancerId" ,verifyToken,s3Upload.array('files', 1), freelancerController.editProfile);
+
+
 module.exports = router;

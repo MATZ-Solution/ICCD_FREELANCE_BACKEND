@@ -85,41 +85,41 @@
 
 // src/swagger.js
 
-const swaggerAutogen = require('swagger-autogen')({
-  openapi: '3.0.0',
-  info: {
-    title: 'POWERHOUSE API',
-    description: 'A simple Express API',
-    version: '1.0.0',
-  },
-});
+// const swaggerAutogen = require('swagger-autogen')({
+//   openapi: '3.0.0',
+//   info: {
+//     title: 'POWERHOUSE API',
+//     description: 'A simple Express API',
+//     version: '1.0.0',
+//   },
+// });
 
-const doc = {
-  info: {
-    title: 'POWERHOUSE API',
-    description: 'A simple Express API',
-    version: '1.0.0',
-  },
-  host: 'powerhouseserver.matzsolutions.com',
-  schemes: ['https'],
-  components: {
-    securitySchemes: {
-      bearerAuth: {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-      },
-    },
-  },
-  security: [{
-    bearerAuth: [
-      'read',
-      'write',
-    ]
-  }],
-};
+// const doc = {
+//   info: {
+//     title: 'POWERHOUSE API',
+//     description: 'A simple Express API',
+//     version: '1.0.0',
+//   },
+//   host: 'powerhouseserver.matzsolutions.com',
+//   schemes: ['https'],
+//   components: {
+//     securitySchemes: {
+//       bearerAuth: {
+//         type: 'http',
+//         scheme: 'bearer',
+//         bearerFormat: 'JWT',
+//       },
+//     },
+//   },
+//   security: [{
+//     bearerAuth: [
+//       'read',
+//       'write',
+//     ]
+//   }],
+// };
 
-const outputFile = './swagger-output.json';
-const endpointsFiles = ['../routes/userRoutes.js', '../routes/catalogueRoutes.js', '../routes/dashboardRoutes.js', '../routes/handshakeRoutes.js', '../routes/meetingMembersRoutes.js', '../routes/notificationRoutes.js', '../routes/scoutRoutes.js']; // Include all your route files here
+// const outputFile = './swagger-output.json';
+// const endpointsFiles = ['../routes/userRoutes.js', '../routes/catalogueRoutes.js', '../routes/dashboardRoutes.js', '../routes/handshakeRoutes.js', '../routes/meetingMembersRoutes.js', '../routes/notificationRoutes.js', '../routes/scoutRoutes.js']; // Include all your route files here
 
-swaggerAutogen(outputFile, endpointsFiles, doc);
+// swaggerAutogen(outputFile, endpointsFiles, doc);

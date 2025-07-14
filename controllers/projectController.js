@@ -3,36 +3,45 @@ const { queryRunner } = require("../helper/queryRunner");
 exports.addProject = async function (req, res) {
   const { userId } = req.user;
   const {
-    projectTitle,
-    category,
-    subCategory,
-    skills,
-    projectDescription,
     budget,
+    category,
     deadline,
+    deliverable,
+    description,
+    duration,
+    freelancerType,
+    language,
+    mode,
+    overview,
+    skills,
+    subCategory,
+    title,
+    total_freelancer,
+    type
   } = req.body;
 
   try {
+
     // Add project into database
-    const insertProjectQuery = `INSERT INTO projects( projectTitle,category, subCategory, projectDescription, budget, deadline , clientID ) VALUES (?,?,?,?,?,?,?) `;
-    const queryParams = [
-      projectTitle,
-      category,
-      subCategory,
-      projectDescription,
-      budget,
-      deadline,
-      userId
-    ];
-    const insertFileResult = await queryRunner(insertProjectQuery, queryParams);
+    const insertProjectQuery = `INSERT INTO projects(title, budget,type, description, clientID, category, subCategory, deadline, duration, total_freelancer, freelancerType, overview, deliverable, mode) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?) `;
+    const values = [title, budget,type, description, userId, category, subCategory, deadline, duration, total_freelancer, freelancerType, overview, deliverable, mode]
+    const insertFileResult = await queryRunner(insertProjectQuery, values);
 
     const project_id = insertFileResult[0].insertId
 
-    let skillsArrays = skills.split(',')
-    if (skillsArrays && skillsArrays.length > 0) {
-      for (const skill of skillsArrays) {
-        const insertProjectQuery = `INSERT INTO projectskills( name, project_id) VALUES (?,?) `;
+
+    if (skills && skills.length > 0) {
+      for (const skill of skills) {
+        const insertProjectQuery = `INSERT INTO project_skills( name, project_id) VALUES (?,?) `;
         const queryParams = [skill, project_id]
+        const insertFileResult = await queryRunner(insertProjectQuery, queryParams);
+      }
+    }
+
+     if (language && language.length > 0) {
+      for (const i of language) {
+        const insertProjectQuery = `INSERT INTO project_language( name, project_id) VALUES (?,?) `;
+        const queryParams = [i, project_id]
         const insertFileResult = await queryRunner(insertProjectQuery, queryParams);
       }
     }
@@ -81,7 +90,7 @@ exports.getProjectByUser = async (req, res) => {
     SELECT  p.*, GROUP_CONCAT(pf.fileUrl) AS projectFiles, GROUP_CONCAT(ps.name) AS projectSkills
     FROM projects p 
     LEFT JOIN projectfiles pf ON pf.projectID = p.id
-    LEFT JOIN projectskills ps ON ps.project_id = p.id
+    LEFT JOIN project_skills ps ON ps.project_id = p.id
     WHERE p.clientID = ?
     GROUP BY p.id
     `;
@@ -123,7 +132,7 @@ exports.getAllProject = async (req, res) => {
     SELECT  p.*, GROUP_CONCAT(pf.fileUrl) AS projectFiles, GROUP_CONCAT(ps.name) AS projectSkills
     FROM projects p 
     LEFT JOIN projectfiles pf ON pf.projectID = p.id
-    LEFT JOIN projectskills ps ON ps.project_id = p.id
+    LEFT JOIN project_skills ps ON ps.project_id = p.id
     GROUP BY p.id
     `;
 
@@ -153,6 +162,40 @@ exports.getAllProject = async (req, res) => {
     return res.status(500).json({
       statusCode: 500,
       message: "Failed to get gigs",
+      error: error.message,
+    });
+  }
+};
+
+exports.getProjectById = async (req, res) => {
+   const { projectId } = req.params;
+  try {
+    const getProjectQuery = `
+    SELECT  p.*, GROUP_CONCAT(DISTINCT ps.name) AS skills, GROUP_CONCAT(DISTINCT pl.name) AS languages
+    FROM projects p 
+    LEFT JOIN project_skills ps ON ps.project_id = p.id
+    LEFT JOIN project_language pl ON pl.project_id = p.id
+    WHERE p.id = ?
+     `;
+    const selectResult = await queryRunner(getProjectQuery, [projectId]);
+
+    if (selectResult[0].length > 0) {
+      res.status(200).json({
+        statusCode: 200,
+        message: "Success",
+        data: selectResult[0]
+      });
+    } else {
+      res.status(200).json({
+        data: [],
+        message: "Project Not Found",
+      });
+    }
+  } catch (error) {
+    console.error("Query error: ", error);
+    return res.status(500).json({
+      statusCode: 500,
+      message: "Failed to get project",
       error: error.message,
     });
   }
