@@ -12,5 +12,4 @@ router.post("/addProfile" ,verifyToken, s3Upload.array('files', 5), freelancerCo
 
 router.put("/editProfile/:freelancerId" ,verifyToken,s3Upload.array('files', 1), freelancerController.editProfile);
 
-
 module.exports = router;

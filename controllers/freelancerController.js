@@ -42,9 +42,9 @@ exports.getFreelancerProfile = async (req, res) => {
     const getProjectQuery = `
     SELECT f.id as freelancerId, f.firstName, f.lastName, f.email, f.about_tagline,about_description, fileUrl, fileKey,
     fs.id as skillId, fs.skill, fs.level,  
-    fe.id as educationId, fe.university_name, fe.country, fe.degree, fe.major, fe.year,
+    fe.id as educationId, fe.university_name, fe.country, fe.degree, fe.major, fe.year as educationYear,
     fl.id as languageId, fl.language_name,
-    fc.id as certificateId, fc.name, fc.organization, fc.year
+    fc.id as certificateId, fc.name, fc.organization, fc.year as certificateYear
     FROM freelancers f
     LEFT JOIN freelancer_education fe ON fe.freelancer_id = f.id
     LEFT JOIN freelancers_languages fl ON fl.freelancer_id = f.id
@@ -53,8 +53,6 @@ exports.getFreelancerProfile = async (req, res) => {
     WHERE userID = ? `;
 
     const selectResult = await queryRunner(getProjectQuery, [userId]);
-
-    console.log("selectResult: ", selectResult[0]);
 
     const skillSet = new Set();
     const langSet = new Set();
@@ -95,20 +93,20 @@ exports.getFreelancerProfile = async (req, res) => {
           level: item.level,
         })),
       educations: selectResult[0]
-      .filter((item) => item.educationId)
+        .filter((item) => item.educationId)
         .filter((item) => {
           if (langSet.has(item.educationId)) return false;
           langSet.add(item.educationId);
           return true;
         })
-      .map((item) => ({
-        educationId: item.educationId,
-        university_name: item.university_name,
-        country: item.country,
-        degree: item.degree,
-        major: item.major,
-        year: item.year,
-      })),
+        .map((item) => ({
+          educationId: item.educationId,
+          university_name: item.university_name,
+          country: item.country,
+          degree: item.degree,
+          major: item.major,
+          year: item.educationYear,
+        })),
       certifications: selectResult[0]
         .filter((item) => item.certificateId)
         .filter((item) => {
@@ -120,7 +118,7 @@ exports.getFreelancerProfile = async (req, res) => {
           certificateId: item.certificateId,
           name: item.name,
           organization: item.organization,
-          year: item.year,
+          year: item.certificateYear,
         })),
     };
 
@@ -128,7 +126,7 @@ exports.getFreelancerProfile = async (req, res) => {
       res.status(200).json({
         statusCode: 200,
         message: "Success",
-        data: freelancer,
+        data: [freelancer],
       });
     } else {
       res.status(200).json({
@@ -247,7 +245,7 @@ exports.addProfile = async function (req, res) {
 
     if (certificationArray && certificationArray.length > 0) {
       for (const certification of certificationArray) {
-        const insertCertificationstQuery = `INSERT INTO freelancer_certificate( certificate_name, awarded_by, year, freelancer_id ) VALUES (?,?,?,?) `;
+        const insertCertificationstQuery = `INSERT INTO freelancer_certificate( name, organization, year, freelancer_id ) VALUES (?,?,?,?) `;
         const queryParams = [
           certification.name,
           certification.from,
@@ -325,7 +323,7 @@ exports.editProfile = async function (req, res) {
     skills,
   } = req.body;
 
-  console.log("languages: ", languages);
+  console.log("skills: ", skills);
 
   try {
     let languagesArray;
@@ -382,7 +380,7 @@ exports.editProfile = async function (req, res) {
       // if (deleteLanguagesResult.affectedRows > 0) {
       for (const i of languagesArray) {
         const insertLanguagesQuery = `INSERT INTO freelancers_languages( language_name, freelancer_id ) VALUES (?,?)`;
-        const queryParams = [i, freelancerId];
+        const queryParams = [i.language, freelancerId];
         const insertLanguagesResult = await queryRunner(
           insertLanguagesQuery,
           queryParams
@@ -392,13 +390,18 @@ exports.editProfile = async function (req, res) {
     }
 
     if (educationArray && educationArray.length > 0) {
+      let deleteQuery = `DELETE FROM freelancer_education WHERE freelancer_id = ?;`;
+      let deleteLanguagesResult = await queryRunner(deleteQuery, [
+        freelancerId,
+      ]);
+
       for (const edu of educationArray) {
         const insertEducationstQuery = `INSERT INTO freelancer_education( university_name, country, degree, major, year, freelancer_id ) VALUES (?,?,?,?,?,?) `;
 
         const queryParams = [
-          edu.institution,
-          edu.level,
-          edu.title,
+          edu.university_name,
+          edu.country,
+          edu.degree,
           edu.major,
           edu.year,
           freelancerId,
@@ -412,8 +415,13 @@ exports.editProfile = async function (req, res) {
     }
 
     if (certificationArray && certificationArray.length > 0) {
+      let deleteQuery = `DELETE FROM freelancer_certificate WHERE freelancer_id = ?;`;
+      let deleteLanguagesResult = await queryRunner(deleteQuery, [
+        freelancerId,
+      ]);
+
       for (const certification of certificationArray) {
-        const insertCertificationstQuery = `INSERT INTO freelancer_certificate( certificate_name, awarded_by, year, freelancer_id ) VALUES (?,?,?,?) `;
+        const insertCertificationstQuery = `INSERT INTO freelancer_certificate( name, organization, year, freelancer_id ) VALUES (?,?,?,?) `;
         const queryParams = [
           certification.name,
           certification.organization,
@@ -428,6 +436,10 @@ exports.editProfile = async function (req, res) {
     }
 
     if (skillsArray && skillsArray.length > 0) {
+      let deleteQuery = `DELETE FROM freelancer_skills WHERE freelancer_id = ?;`;
+      let deleteLanguagesResult = await queryRunner(deleteQuery, [
+        freelancerId,
+      ]);
       for (const skill of skillsArray) {
         const insertSkillstQuery = `INSERT INTO freelancer_skills( skill, level, freelancer_id ) VALUES (?,?,?) `;
         const queryParams = [skill.skill, skill.level, freelancerId];
