@@ -201,3 +201,35 @@ exports.getProjectById = async (req, res) => {
   }
 };
 
+exports.addProject = async function (req, res) {
+  const { userId } = req.user;
+  const { name, experience, clientId, projectId} = req.body;
+  const files = req.files
+
+  try {
+    // Add project_proposals into database
+    const insertProposalsQuery = `INSERT INTO project_proposals(name, experience, projectId, clientId, freelancerId, fileUrl, fileKey) VALUES (?,?,?,?,?,?,?) `;
+    const values = [name, experience,projectId, clientId, userId, files[0].location, files[0].key]
+    const insertFileResult = await queryRunner(insertProposalsQuery, values);
+
+     if (insertFileResult[0].affectedRows > 0) {
+      return res.status(200).json({
+        statusCode: 200,
+        message: "Proposal submitted successfully",
+      });
+    } else {
+      return res.status(200).json({
+        statusCode: 200,
+        message: "Failed to add Project",
+      });
+    }
+
+  } catch (error) {
+    console.log("Error: ", error);
+    return res.status(500).json({
+      message: "Failed to add Project",
+      message: error.message,
+    });
+  }
+};
+
