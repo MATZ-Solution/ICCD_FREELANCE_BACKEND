@@ -107,17 +107,20 @@ exports.getSingleOrderByFreelancer = async (req, res) => {
 };
 
 exports.getAllOrderByClient = async (req, res) => {
-    const { userID } = req.body;
+    const { clientID } = req.params;
     try {
         const getOrderQuery = `
         SELECT 
         o.*,
-        g.id as gigsID, g.title AS gigsTitle, g.description AS gigsDescription
+        g.id as gigsID, g.title AS gigsTitle, g.description AS gigsDescription,
+        GROUP_CONCAT(gf.fileUrl) AS gigsImage
+        
         FROM orders o
         JOIN gigs g ON g.id = o.gigID
-        WHERE o.userID = ?
+        JOIN gigsfiles gf ON gf.gigID = g.id
+        WHERE o.clientID = ?
      `;
-        const selectResult = await queryRunner(getOrderQuery, [userID]);
+        const selectResult = await queryRunner(getOrderQuery, [clientID]);
 
         if (selectResult[0].length > 0) {
             res.status(200).json({

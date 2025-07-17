@@ -9,9 +9,8 @@ router.get("/getAllProject" , projectController.getAllProject);
 router.get("/getProjectByUser" ,verifyToken, projectController.getProjectByUser);
 router.get("/getProjectById/:projectId" ,verifyToken, projectController.getProjectById);
 
-
 router.post("/addProject" ,verifyToken, s3Upload.array('files', 5), projectController.addProject);
-router.post("/submitProposals" ,verifyToken, s3Upload.array('files', 5), projectController.addProject);
+router.post("/submitProposals" ,verifyToken, s3Upload.array('files', 5), projectController.applyProject);
 
 
 module.exports = router;

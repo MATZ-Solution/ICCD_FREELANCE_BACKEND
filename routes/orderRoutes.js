@@ -11,6 +11,7 @@ router.post("/createOrder",verifyToken, orderController.createOrder);
 router.get("/getAllOrderByFreelancer/:freelancerID",verifyToken, orderController.getAllOrderByFreelancer);
 router.get("/getSingleOrderByFreelancer/:orderId",verifyToken, orderController.getSingleOrderByFreelancer);
 
-
+router.get("/getAllOrderByClient/:clientID",verifyToken, orderController.getAllOrderByClient);
+// router.get("/getSingleOrderByFreelancer/:orderId",verifyToken, orderController.getSingleOrderByFreelancer);
 
 module.exports = router;
