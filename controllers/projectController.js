@@ -82,15 +82,17 @@ exports.addProject = async function (req, res) {
   }
 };
 
-exports.getProjectByUser = async (req, res) => {
+exports.getProjectByClient = async (req, res) => {
   const { userId } = req.user;
   console.log("userId: ", userId)
   try {
     const getProjectQuery = `
-    SELECT  p.*, GROUP_CONCAT(pf.fileUrl) AS projectFiles, GROUP_CONCAT(ps.name) AS projectSkills
+    SELECT  p.*, GROUP_CONCAT(pf.fileUrl) AS projectFiles, GROUP_CONCAT(ps.name) AS projectSkills,
+    COUNT(DISTINCT pp.id) AS totalProposals
     FROM projects p 
     LEFT JOIN projectfiles pf ON pf.projectID = p.id
     LEFT JOIN project_skills ps ON ps.project_id = p.id
+    LEFT JOIN project_proposals pp ON pp.projectId = p.id
     WHERE p.clientID = ?
     GROUP BY p.id
     `;
@@ -113,14 +115,14 @@ exports.getProjectByUser = async (req, res) => {
     } else {
       res.status(200).json({
         data: [],
-        message: "Gigs Not Found",
+        message: "Project Not Found",
       });
     }
   } catch (error) {
     console.error("Query error: ", error);
     return res.status(500).json({
       statusCode: 500,
-      message: "Failed to get gigs",
+      message: "Failed to get projects",
       error: error.message,
     });
   }
