@@ -173,10 +173,48 @@ exports.getProjectById = async (req, res) => {
    const { projectId } = req.params;
   try {
     const getProjectQuery = `
-    SELECT  p.*, GROUP_CONCAT(DISTINCT ps.name) AS skills, GROUP_CONCAT(DISTINCT pl.name) AS languages
+    SELECT  p.*, GROUP_CONCAT(DISTINCT ps.name) AS skills, GROUP_CONCAT(DISTINCT pl.name) AS languages,
+    u.name as companyName, u.about as companyAbout, u.fileUrl as companyImg
     FROM projects p 
     LEFT JOIN project_skills ps ON ps.project_id = p.id
     LEFT JOIN project_language pl ON pl.project_id = p.id
+    LEFT JOIN users u ON u.id = p.clientID
+    WHERE p.id = ?
+     `;
+    const selectResult = await queryRunner(getProjectQuery, [projectId]);
+
+    if (selectResult[0].length > 0) {
+      res.status(200).json({
+        statusCode: 200,
+        message: "Success",
+        data: selectResult[0]
+      });
+    } else {
+      res.status(200).json({
+        data: [],
+        message: "Project Not Found",
+      });
+    }
+  } catch (error) {
+    console.error("Query error: ", error);
+    return res.status(500).json({
+      statusCode: 500,
+      message: "Failed to get project",
+      error: error.message,
+    });
+  }
+};
+
+exports.getProjectProposalsByClient = async (req, res) => {
+   const { projectId } = req.params;
+  try {
+    const getProjectQuery = `
+    SELECT  pp.*,
+    f.id AS freelancerId, CONCAT(f.firstName, ' ', f.lastName) AS freelancerName,
+    f.fileUrl as freelancerImg
+    FROM project_proposals pp
+    LEFT JOIN projects p ON p.id = pp.projectId
+    LEFT JOIN freelancers f ON f.id = pp.freelancerId
     WHERE p.id = ?
      `;
     const selectResult = await queryRunner(getProjectQuery, [projectId]);

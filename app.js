@@ -10,6 +10,7 @@ const projectRoutes = require('./routes/projectRoutes')
 const gigsRoutes = require('./routes/gigsRoutes')
 const freelancerRoutes = require('./routes/freelancerRoutes')
 const orderRoutes = require('./routes/orderRoutes')
+const clientRoutes = require('./routes/clientRoutes')
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerFile = require('./swagger/swagger-output.json'); 
@@ -58,6 +59,8 @@ app.use("/job", projectRoutes);
 app.use("/gigs", gigsRoutes);
 app.use("/freelancer", freelancerRoutes);
 app.use("/order", orderRoutes);
+app.use("/client", clientRoutes);
+
 // app.use("/MeetingMembers", MeetingMembersRoutes);
 // app.use("/notify", notificationRoutes);
 // app.use("/dashboard", dashboardRoutes);

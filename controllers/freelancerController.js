@@ -323,28 +323,7 @@ exports.editProfile = async function (req, res) {
     skills,
   } = req.body;
 
-  console.log("skills: ", skills);
-
   try {
-    let languagesArray;
-    if (languages && languages.length > 0) {
-      languagesArray = JSON.parse(languages);
-    }
-
-    let skillsArray;
-    if (skills && skills.length > 0) {
-      skillsArray = JSON.parse(skills);
-    }
-
-    let certificationArray;
-    if (certifications && certifications.length > 0) {
-      certificationArray = JSON.parse(certifications);
-    }
-
-    let educationArray;
-    if (educations && educations.length > 0) {
-      educationArray = JSON.parse(educations);
-    }
 
     // Add project into database
     let fields = [];
@@ -370,14 +349,13 @@ exports.editProfile = async function (req, res) {
       ]);
     }
 
-    if (languagesArray && languagesArray.length > 0) {
-      console.log("1");
+    let languagesArray;
+    if (languages && languages.length >= 0) {
+      languagesArray = JSON.parse(languages);
       let deleteQuery = `DELETE FROM freelancers_languages WHERE freelancer_id = ?;`;
       let deleteLanguagesResult = await queryRunner(deleteQuery, [
         freelancerId,
       ]);
-
-      // if (deleteLanguagesResult.affectedRows > 0) {
       for (const i of languagesArray) {
         const insertLanguagesQuery = `INSERT INTO freelancers_languages( language_name, freelancer_id ) VALUES (?,?)`;
         const queryParams = [i.language, freelancerId];
@@ -386,35 +364,28 @@ exports.editProfile = async function (req, res) {
           queryParams
         );
       }
-      // }
     }
 
-    if (educationArray && educationArray.length > 0) {
-      let deleteQuery = `DELETE FROM freelancer_education WHERE freelancer_id = ?;`;
+    let skillsArray;
+    if (skills && skills.length >= 0) {
+      skillsArray = JSON.parse(skills);
+      let deleteQuery = `DELETE FROM freelancer_skills WHERE freelancer_id = ?;`;
       let deleteLanguagesResult = await queryRunner(deleteQuery, [
         freelancerId,
       ]);
-
-      for (const edu of educationArray) {
-        const insertEducationstQuery = `INSERT INTO freelancer_education( university_name, country, degree, major, year, freelancer_id ) VALUES (?,?,?,?,?,?) `;
-
-        const queryParams = [
-          edu.university_name,
-          edu.country,
-          edu.degree,
-          edu.major,
-          edu.year,
-          freelancerId,
-        ];
-        console.log("queryParams: ", queryParams);
-        const insertEducationResult = await queryRunner(
-          insertEducationstQuery,
+      for (const skill of skillsArray) {
+        const insertSkillstQuery = `INSERT INTO freelancer_skills( skill, level, freelancer_id ) VALUES (?,?,?) `;
+        const queryParams = [skill.skill, skill.level, freelancerId];
+        const insertSkillsResult = await queryRunner(
+          insertSkillstQuery,
           queryParams
         );
       }
     }
 
-    if (certificationArray && certificationArray.length > 0) {
+    let certificationArray;
+    if (certifications && certifications.length >= 0) {
+      certificationArray = JSON.parse(certifications);
       let deleteQuery = `DELETE FROM freelancer_certificate WHERE freelancer_id = ?;`;
       let deleteLanguagesResult = await queryRunner(deleteQuery, [
         freelancerId,
@@ -435,20 +406,32 @@ exports.editProfile = async function (req, res) {
       }
     }
 
-    if (skillsArray && skillsArray.length > 0) {
-      let deleteQuery = `DELETE FROM freelancer_skills WHERE freelancer_id = ?;`;
+    let educationArray;
+    if (educations && educations.length >= 0) {
+      educationArray = JSON.parse(educations);
+      let deleteQuery = `DELETE FROM freelancer_education WHERE freelancer_id = ?;`;
       let deleteLanguagesResult = await queryRunner(deleteQuery, [
         freelancerId,
       ]);
-      for (const skill of skillsArray) {
-        const insertSkillstQuery = `INSERT INTO freelancer_skills( skill, level, freelancer_id ) VALUES (?,?,?) `;
-        const queryParams = [skill.skill, skill.level, freelancerId];
-        const insertSkillsResult = await queryRunner(
-          insertSkillstQuery,
+      for (const edu of educationArray) {
+        const insertEducationstQuery = `INSERT INTO freelancer_education( university_name, country, degree, major, year, freelancer_id ) VALUES (?,?,?,?,?,?) `;
+
+        const queryParams = [
+          edu.university_name,
+          edu.country,
+          edu.degree,
+          edu.major,
+          edu.year,
+          freelancerId,
+        ];
+        const insertEducationResult = await queryRunner(
+          insertEducationstQuery,
           queryParams
         );
       }
     }
+
+
 
     // Add files into database
     // if (freelancerResult && freelancerResult[0].affectedRows > 0) {
