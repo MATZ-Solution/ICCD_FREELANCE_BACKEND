@@ -125,9 +125,14 @@ exports.getSingleGigs = async (req, res) => {
     const getProjectQuery = `
       SELECT 
       g.id as gigsID, g.title, g.description, g.category, g.freelancer_id as freelancerID, GROUP_CONCAT(DISTINCT(gf.fileUrl)) as gigsFiles,
-      p.*,
+      
+      p.name as packageName, p.description as packageDescription,
+      p.stationeryDesigns, p.vectorFile, p.sourceFile, p.socialMediaKit, p.printableFile,
+      p.logoTransparency, p.deliveryTime, p.revisions, p.price,
+
       f.id as freelancerId, f.fileUrl as freelancerPic, f.firstName, f.lastName, f.about_tagline, f.about_description,
       GROUP_CONCAT(fl.language_name) as FreelancerLanguages
+      
       FROM gigs g
 
       JOIN gigsfiles gf ON gf.gigID = g.id
@@ -146,6 +151,9 @@ exports.getSingleGigs = async (req, res) => {
     const filterData = selectResult[0].map((item) => ({
       packageId: item.id,
       packageType: item.packageType,
+      packageName: item.packageName,
+      packageDescription: item.packageDescription,
+      deliveryTime: item.deliveryTime,
       stationeryDesigns: item.stationeryDesigns,
       vectorFile: item.vectorFile,
       sourceFile: item.sourceFile,
