@@ -1,7 +1,14 @@
 const { queryRunner } = require("../helper/queryRunner");
 
 exports.addGigs = async function (req, res) {
-  const { gigsTitle, category, subCategory, description, packages, freelancerId } = req.body;
+  const {
+    gigsTitle,
+    category,
+    subCategory,
+    description,
+    packages,
+    freelancerId,
+  } = req.body;
 
   try {
     // Add project into database
@@ -27,12 +34,35 @@ exports.addGigs = async function (req, res) {
     for (const key of ["basic", "standard", "premium"]) {
       const pkg = parsedPackages[key];
       if (!pkg) continue;
-      const { packageType, name, description, deliveryTime, revisions,
-        stationeryDesigns, vectorFile, sourceFile, socialMediaKit, printableFile, logoTransparency,
-        price
+      const {
+        packageType,
+        name,
+        description,
+        deliveryTime,
+        revisions,
+        stationeryDesigns,
+        vectorFile,
+        sourceFile,
+        socialMediaKit,
+        printableFile,
+        logoTransparency,
+        price,
       } = pkg;
-      const queryParams = [packageType, name, description, deliveryTime, revisions, stationeryDesigns,
-        vectorFile, sourceFile, socialMediaKit, printableFile, logoTransparency, price, gigId]
+      const queryParams = [
+        packageType,
+        name,
+        description,
+        deliveryTime,
+        revisions,
+        stationeryDesigns,
+        vectorFile,
+        sourceFile,
+        socialMediaKit,
+        printableFile,
+        logoTransparency,
+        price,
+        gigId,
+      ];
       await queryRunner(
         `INSERT INTO packages( packageType, name, description, deliveryTime, revisions, stationeryDesigns,
         vectorFile, sourceFile, socialMediaKit, printableFile, logoTransparency, price,
@@ -73,7 +103,7 @@ exports.addGigs = async function (req, res) {
 
 exports.getAllGigs = async (req, res) => {
   const { search } = req.query;
-  console.log("search: ", search)
+  console.log("search: ", search);
   let queryParams = [];
   try {
     let getProjectQuery = `
@@ -142,11 +172,21 @@ exports.getSingleGigs = async (req, res) => {
       WHERE g.id = ?
       GROUP BY p.packageType
       `;
-    //  p.packageType
     const selectResult = await queryRunner(getProjectQuery, [gigID]);
-    console.log("selectResult: ", selectResult[0])
-    const { title, description, gigsFiles, firstName, lastName, about_tagline, about_description, freelancerPic, FreelancerLanguages, gigsID, freelancerId } = selectResult[0][0]
-
+    console.log("selectResult: ", selectResult[0]);
+    const {
+      title,
+      description,
+      gigsFiles,
+      firstName,
+      lastName,
+      about_tagline,
+      about_description,
+      freelancerPic,
+      FreelancerLanguages,
+      gigsID,
+      freelancerId,
+    } = selectResult[0][0];
 
     const filterData = selectResult[0].map((item) => ({
       packageId: item.id,
@@ -161,26 +201,27 @@ exports.getSingleGigs = async (req, res) => {
       printableFile: item.printableFile,
       logoTransparency: item.logoTransparency,
       revisions: item.revisions,
-      price: item.price
-    }))
+      price: item.price,
+    }));
 
     const obj = {
       gigsDescription: {
         gigsID: gigsID,
         gigsTitle: title,
         gigsDescription: description,
-        gigsFiles: gigsFiles
+        gigsFiles: gigsFiles,
       },
       freelancerDetails: {
         freelancerId: freelancerId,
         freelancerName: firstName + lastName,
         about_tagline: about_tagline,
         freelancer_about_description: about_description,
-        FreelancerLanguages,FreelancerLanguages,
-        freelancerPic: freelancerPic
+        FreelancerLanguages,
+        FreelancerLanguages,
+        freelancerPic: freelancerPic,
       },
-      packagesDetails: filterData
-    }
+      packagesDetails: filterData,
+    };
 
     if (selectResult[0].length > 0) {
       res.status(200).json({
@@ -208,8 +249,8 @@ exports.getSingleGigs = async (req, res) => {
 
 exports.getGigsByUser = async (req, res) => {
   const { userId } = req.user;
-  const { id } = req.params
-  console.log("userId: ", userId)
+  const { id } = req.params;
+  console.log("userId: ", userId);
   try {
     const getProjectQuery = `
     SELECT  g.*, GROUP_CONCAT(gf.fileUrl) AS gigsFiles
@@ -223,15 +264,15 @@ exports.getGigsByUser = async (req, res) => {
 
     const filterData = selectResult[0].map((item) => ({
       ...item,
-      gigsFiles: item.gigsFiles ? item.gigsFiles.split(',')[0] : []
-    }))
+      gigsFiles: item.gigsFiles ? item.gigsFiles.split(",")[0] : [],
+    }));
 
     if (selectResult[0].length > 0) {
       res.status(200).json({
         statusCode: 200,
         message: "Success",
         // data: selectResult[0]
-        data: filterData
+        data: filterData,
       });
     } else {
       res.status(200).json({
@@ -245,6 +286,107 @@ exports.getGigsByUser = async (req, res) => {
       statusCode: 500,
       message: "Failed to get gigs",
       error: error.message,
+    });
+  }
+};
+
+exports.editGigs = async function (req, res) {
+  const {
+    gigsTitle,
+    category,
+    subCategory,
+    description,
+    packages,
+    freelancerId,
+  } = req.body;
+
+  try {
+    // Add project into database
+    const insertGigsQuery = `INSERT INTO gigs(title, description, category, subCategory, freelancer_id) VALUES (?,?,?,?,?) `;
+    const queryParamsGigs = [
+      gigsTitle,
+      description,
+      category,
+      subCategory,
+      freelancerId,
+    ];
+
+    // add gigs in gigs table
+    const insertGigsResult = await queryRunner(
+      insertGigsQuery,
+      queryParamsGigs
+    );
+
+    // add packages in packages table
+    const gigId = insertGigsResult[0].insertId;
+    const parsedPackages = JSON.parse(packages);
+
+    for (const key of ["basic", "standard", "premium"]) {
+      const pkg = parsedPackages[key];
+      if (!pkg) continue;
+      const {
+        packageType,
+        name,
+        description,
+        deliveryTime,
+        revisions,
+        stationeryDesigns,
+        vectorFile,
+        sourceFile,
+        socialMediaKit,
+        printableFile,
+        logoTransparency,
+        price,
+      } = pkg;
+      const queryParams = [
+        packageType,
+        name,
+        description,
+        deliveryTime,
+        revisions,
+        stationeryDesigns,
+        vectorFile,
+        sourceFile,
+        socialMediaKit,
+        printableFile,
+        logoTransparency,
+        price,
+        gigId,
+      ];
+      await queryRunner(
+        `INSERT INTO packages( packageType, name, description, deliveryTime, revisions, stationeryDesigns,
+        vectorFile, sourceFile, socialMediaKit, printableFile, logoTransparency, price,
+        gigID)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        queryParams
+      );
+    }
+
+    // add gig's file in gigsfiles table
+    if (req.files.length > 0) {
+      for (const file of req.files) {
+        const insertFileResult = await queryRunner(
+          `INSERT INTO gigsfiles(fileUrl, fileKey, gigID) VALUES (?, ?, ?)`,
+          [file.location, file.key, gigId]
+        );
+        if (insertFileResult.affectedRows <= 0) {
+          return res.status(500).json({
+            statusCode: 500,
+            message: "Failed to add files",
+          });
+        }
+      }
+    }
+
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Gigs added successfully",
+    });
+  } catch (error) {
+    console.log("Error: ", error);
+    return res.status(500).json({
+      message: "Failed to add Gigs",
+      message: error.message,
     });
   }
 };
