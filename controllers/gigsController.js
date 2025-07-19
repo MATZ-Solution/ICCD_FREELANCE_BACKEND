@@ -158,7 +158,7 @@ exports.getSingleGigs = async (req, res) => {
       
       p.name as packageName, p.description as packageDescription,
       p.stationeryDesigns, p.vectorFile, p.sourceFile, p.socialMediaKit, p.printableFile,
-      p.logoTransparency, p.deliveryTime, p.revisions, p.price,
+      p.logoTransparency, p.deliveryTime, p.revisions, p.price,p.packageType,
 
       f.id as freelancerId, f.fileUrl as freelancerPic, f.firstName, f.lastName, f.about_tagline, f.about_description,
       GROUP_CONCAT(fl.language_name) as FreelancerLanguages
@@ -290,98 +290,30 @@ exports.getGigsByUser = async (req, res) => {
   }
 };
 
-exports.editGigs = async function (req, res) {
-  const {
-    gigsTitle,
-    category,
-    subCategory,
-    description,
-    packages,
-    freelancerId,
-  } = req.body;
+exports.editGigsOverview = async function (req, res) {
+  const { gigId } = req.params;
+  const { gigsTitle, category, subCategory } = req.body;
 
   try {
-    // Add project into database
-    const insertGigsQuery = `INSERT INTO gigs(title, description, category, subCategory, freelancer_id) VALUES (?,?,?,?,?) `;
-    const queryParamsGigs = [
+    const insertGigsQuery = `UPDATE gigs SET title = ?, category = ?, subCategory = ? WHERE id = ? `;
+    const insertGigsResult = await queryRunner(insertGigsQuery, [
       gigsTitle,
-      description,
       category,
       subCategory,
-      freelancerId,
-    ];
+      gigId,
+    ]);
 
-    // add gigs in gigs table
-    const insertGigsResult = await queryRunner(
-      insertGigsQuery,
-      queryParamsGigs
-    );
-
-    // add packages in packages table
-    const gigId = insertGigsResult[0].insertId;
-    const parsedPackages = JSON.parse(packages);
-
-    for (const key of ["basic", "standard", "premium"]) {
-      const pkg = parsedPackages[key];
-      if (!pkg) continue;
-      const {
-        packageType,
-        name,
-        description,
-        deliveryTime,
-        revisions,
-        stationeryDesigns,
-        vectorFile,
-        sourceFile,
-        socialMediaKit,
-        printableFile,
-        logoTransparency,
-        price,
-      } = pkg;
-      const queryParams = [
-        packageType,
-        name,
-        description,
-        deliveryTime,
-        revisions,
-        stationeryDesigns,
-        vectorFile,
-        sourceFile,
-        socialMediaKit,
-        printableFile,
-        logoTransparency,
-        price,
-        gigId,
-      ];
-      await queryRunner(
-        `INSERT INTO packages( packageType, name, description, deliveryTime, revisions, stationeryDesigns,
-        vectorFile, sourceFile, socialMediaKit, printableFile, logoTransparency, price,
-        gigID)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        queryParams
-      );
+    if (insertGigsResult[0].affectedRows > 0) {
+      return res.status(200).json({
+        statusCode: 200,
+        message: "Gigs Edited successfully",
+      });
+    } else {
+      return res.status(500).json({
+        message: "Failed to add Gigs",
+        message: error.message,
+      });
     }
-
-    // add gig's file in gigsfiles table
-    if (req.files.length > 0) {
-      for (const file of req.files) {
-        const insertFileResult = await queryRunner(
-          `INSERT INTO gigsfiles(fileUrl, fileKey, gigID) VALUES (?, ?, ?)`,
-          [file.location, file.key, gigId]
-        );
-        if (insertFileResult.affectedRows <= 0) {
-          return res.status(500).json({
-            statusCode: 500,
-            message: "Failed to add files",
-          });
-        }
-      }
-    }
-
-    return res.status(200).json({
-      statusCode: 200,
-      message: "Gigs added successfully",
-    });
   } catch (error) {
     console.log("Error: ", error);
     return res.status(500).json({

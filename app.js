@@ -11,6 +11,8 @@ const gigsRoutes = require('./routes/gigsRoutes')
 const freelancerRoutes = require('./routes/freelancerRoutes')
 const orderRoutes = require('./routes/orderRoutes')
 const clientRoutes = require('./routes/clientRoutes')
+const stripeRoutes = require('./routes/stripe');
+const notificationRoutes = require('./routes/notificationRoutes');
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerFile = require('./swagger/swagger-output.json'); 
@@ -25,11 +27,30 @@ const server = http.createServer(app); // Use http.createServer to create the se
 // ✅ Initialize socket.io on the server
 const io = new Server(server, {
   cors: {
-    origin: '*', // You can restrict this to your frontend origin in production
+    origin: '*', // Update with frontend origin in production
     methods: ['GET', 'POST'],
   },
 });
-socketHandler(io)
+
+//  Socket connection and room handling
+io.on("connection", (socket) => {
+  console.log(" Socket connected:", socket.id);
+
+  socket.on("join", (userId) => {
+    socket.join(`user_${userId}`);
+    console.log(`User joined room: user_${userId}`);
+  });
+
+  socket.on("disconnect", () => {
+    console.log(" Socket disconnected:", socket.id);
+  });
+});
+
+//  Attach io to every request
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
 
 app.use(cookieParser());
 app.use(bodyParser.json());
@@ -60,12 +81,8 @@ app.use("/gigs", gigsRoutes);
 app.use("/freelancer", freelancerRoutes);
 app.use("/order", orderRoutes);
 app.use("/client", clientRoutes);
-
-// app.use("/MeetingMembers", MeetingMembersRoutes);
-// app.use("/notify", notificationRoutes);
-// app.use("/dashboard", dashboardRoutes);
-// app.use("/catalogue", catalogueRoutes);
-// app.use("/handshake", handshakeRoutes);
+app.use("/stripe", stripeRoutes);
+app.use("/notifications", notificationRoutes);
 
 server.listen(2300, () => {
   console.log("Server is running on port 2300");

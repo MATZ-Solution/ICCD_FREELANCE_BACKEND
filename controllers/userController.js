@@ -53,8 +53,9 @@ exports.signUp = async function (req, res) {
 // // ###################### SignIn user start #######################################
 exports.signIn = async function (req, res) {
   const { email, password } = req.body;
+  console.log("password: ", req.body)
   try {
-    const query = ` SELECT id, name, email, fileUrl as userImg,about, password FROM users where email = ? `;
+    const query = ` SELECT id, name, email, fileUrl as userImg, about, password FROM users where email = ? `;
     const findUser = await queryRunner(query, [email]);
 
     if (findUser[0].length === 0) {

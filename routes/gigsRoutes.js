@@ -12,4 +12,7 @@ router.get('/getGigsByUser/:id', verifyToken, gigsController.getGigsByUser)
 
 router.post('/addGigs', verifyToken, s3Upload.array('files', 5), gigsController.addGigs)
 
+router.put('/editGigs/overview/:gigId', verifyToken, gigsController.editGigsOverview)
+
+
 module.exports = router;
