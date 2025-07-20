@@ -13,6 +13,8 @@ const orderRoutes = require('./routes/orderRoutes')
 const clientRoutes = require('./routes/clientRoutes')
 const stripeRoutes = require('./routes/stripe');
 const notificationRoutes = require('./routes/notificationRoutes');
+const jobRoutes = require('./routes/jobRoutes');
+
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerFile = require('./swagger/swagger-output.json'); 
@@ -76,7 +78,7 @@ getConnectionFromPool();
 // Use routes after middlewares
 app.use("/", userRoutes);
 app.use("/project", projectRoutes);
-app.use("/job", projectRoutes);
+app.use("/job", jobRoutes);
 app.use("/gigs", gigsRoutes);
 app.use("/freelancer", freelancerRoutes);
 app.use("/order", orderRoutes);

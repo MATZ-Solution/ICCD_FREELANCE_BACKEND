@@ -1,10 +1,17 @@
 const express = require("express");
 const router = express.Router();
-const gigsController = require("../controllers/gigsController");
+const jobController = require("../controllers/jobController");
 const { verifyToken } = require("../middleware/authenticate");
 const s3Upload = require('../middleware/s3Upload');
 
 //  s3Upload.array('files', 5)
-router.post("/addJob" ,verifyToken, s3Upload.array('files', 5), gigsController.addJob);
+router.get("/getAllJob" ,verifyToken, jobController.getAllJob);
+router.get("/getJobById/:id" ,verifyToken, jobController.getJobById);
+router.get("/getJobsByClient" ,verifyToken, jobController.getJobByClient);
+router.get("/getJobPropsalByClient/:jobId" ,verifyToken, jobController.getJobProposalsByClient);
+
+router.post("/addJob" ,verifyToken, jobController.addJob);
+router.post("/applyJob" ,verifyToken, s3Upload.array('files', 1), jobController.applyJob);
+
 
 module.exports = router;

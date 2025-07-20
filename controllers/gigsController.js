@@ -1,4 +1,5 @@
 const { queryRunner } = require("../helper/queryRunner");
+const { deleteS3File } = require("../utils/deleteS3Files")
 
 exports.addGigs = async function (req, res) {
   const {
@@ -154,7 +155,7 @@ exports.getSingleGigs = async (req, res) => {
   try {
     const getProjectQuery = `
       SELECT 
-      g.id as gigsID, g.title, g.description, g.category, g.freelancer_id as freelancerID, GROUP_CONCAT(DISTINCT(gf.fileUrl)) as gigsFiles,
+      g.id as gigsID, g.title, g.description, g.category,g.subCategory, g.freelancer_id as freelancerID, GROUP_CONCAT(DISTINCT(gf.fileUrl)) as gigsFiles,
       
       p.name as packageName, p.description as packageDescription,
       p.stationeryDesigns, p.vectorFile, p.sourceFile, p.socialMediaKit, p.printableFile,
@@ -173,9 +174,10 @@ exports.getSingleGigs = async (req, res) => {
       GROUP BY p.packageType
       `;
     const selectResult = await queryRunner(getProjectQuery, [gigID]);
-    console.log("selectResult: ", selectResult[0]);
     const {
       title,
+      category,
+      subCategory,
       description,
       gigsFiles,
       firstName,
@@ -208,6 +210,8 @@ exports.getSingleGigs = async (req, res) => {
       gigsDescription: {
         gigsID: gigsID,
         gigsTitle: title,
+        gigsCategory: category,
+        gigsSubcategory: subCategory,
         gigsDescription: description,
         gigsFiles: gigsFiles,
       },
@@ -290,35 +294,140 @@ exports.getGigsByUser = async (req, res) => {
   }
 };
 
-exports.editGigsOverview = async function (req, res) {
-  const { gigId } = req.params;
-  const { gigsTitle, category, subCategory } = req.body;
-
+exports.getGigsOverview = async (req, res) => {
+  const { gigID } = req.params;
   try {
-    const insertGigsQuery = `UPDATE gigs SET title = ?, category = ?, subCategory = ? WHERE id = ? `;
-    const insertGigsResult = await queryRunner(insertGigsQuery, [
-      gigsTitle,
-      category,
-      subCategory,
-      gigId,
-    ]);
+    const getProjectQuery = `SELECT title, category, subCategory, description FROM gigs WHERE id = ?`;
 
-    if (insertGigsResult[0].affectedRows > 0) {
-      return res.status(200).json({
+    const selectResult = await queryRunner(getProjectQuery, [gigID]);
+
+    if (selectResult[0].length > 0) {
+      res.status(200).json({
         statusCode: 200,
-        message: "Gigs Edited successfully",
+        message: "Success",
+        data: selectResult[0]
       });
     } else {
-      return res.status(500).json({
-        message: "Failed to add Gigs",
-        message: error.message,
+      res.status(200).json({
+        data: [],
+        message: "Gigs Not Found",
       });
     }
+  } catch (error) {
+    console.error("Query error: ", error);
+    return res.status(500).json({
+      statusCode: 500,
+      message: "Failed to get gigs",
+      error: error.message,
+    });
+  }
+};
+
+exports.editGigs = async function (req, res) {
+  const { gigId } = req.params;
+  const { gigsTitle, category, subCategory, description, packages = '' } = req.body;
+  console.log("req body: ", req.body)
+
+  try {
+
+    if (gigsTitle && category && subCategory) {
+      const insertGigsQuery = `UPDATE gigs SET title = ?, category = ?, subCategory = ? WHERE id = ? `;
+      const insertGigsResult = await queryRunner(insertGigsQuery, [
+        gigsTitle,
+        category,
+        subCategory,
+        gigId,
+      ]);
+    }
+
+    if (description) {
+      const insertGigsQuery = `UPDATE gigs SET description = ? WHERE id = ? `;
+      const insertGigsResult = await queryRunner(insertGigsQuery, [
+        description,
+        gigId,
+      ]);
+    }
+
+    if (packages && packages?.premium) {
+      console.log("1")
+      const parsedPackages = JSON.parse(packages);
+      for (const key of ["basic", "standard", "premium"]) {
+        const pkg = parsedPackages[key];
+        if (!pkg) continue;
+        const {
+          packageType,
+          name,
+          description,
+          deliveryTime,
+          revisions,
+          stationeryDesigns,
+          vectorFile,
+          sourceFile,
+          socialMediaKit,
+          printableFile,
+          logoTransparency,
+          price,
+        } = pkg;
+        const queryParams = [
+          packageType,
+          name,
+          description,
+          deliveryTime,
+          revisions,
+          stationeryDesigns,
+          vectorFile,
+          sourceFile,
+          socialMediaKit,
+          printableFile,
+          logoTransparency,
+          price,
+          gigId,
+        ];
+        await queryRunner(
+          `UPDATE packages SET packageType = ? name = ?, description = ?, deliveryTime = ?, 
+           revisions = ? , stationeryDesigns = ?, vectorFile = ?, sourceFile = ?, socialMediaKit = ?, 
+           printableFile = ?, logoTransparency = ?, price = ?,
+           WHERE gigID = ?`,
+          queryParams
+        );
+      }
+    }
+
+    if (req.files && req.files?.length > 0) {
+      for (const file of req.files) {
+        const insertFileResult = await queryRunner(
+          `INSERT INTO gigsfiles(fileUrl, fileKey, gigID) VALUES (?, ?, ?)`,
+          [file.location, file.key, gigId]
+        );
+        if (insertFileResult.affectedRows <= 0) {
+          return res.status(500).json({
+            statusCode: 500,
+            message: "Failed to add files",
+          });
+        }
+      }
+    }
+
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Gigs Edited successfully",
+    });
+
   } catch (error) {
     console.log("Error: ", error);
     return res.status(500).json({
       message: "Failed to add Gigs",
       message: error.message,
     });
+  }
+};
+
+exports.checkDeleteFile = async (req, res) => {
+  const { fileKey } = req.body
+  try {
+    await deleteS3File(fileKey);
+  } catch (error) {
+    console.error("Query error: ", error);
+
   }
 };

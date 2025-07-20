@@ -2,67 +2,215 @@ const { queryRunner } = require("../helper/queryRunner");
 
 exports.addJob = async function (req, res) {
   const { userId } = req.user;
- 
+
   const {
-    projectTitle,
-    skills,
-    budget,
-    projectDescription,
-    category,
-    milestoneTitle,
-    milestoneDueDate,
-    milestoneAmount,
+    jobTitle,
+    jobType,
+    joblocation,
+    payType,
+    minSalaray,
+    maxSalaray,
+    jobDescription,
+    totalPersontoHire
   } = req.body;
 
   try {
-
-    // Add project into database
-    const insertProjectQuery = `INSERT INTO projects( projectTitle, skills, budget, projectDescription, clientID, category, milestoneTitle, milestoneDueDate, milestoneAmount) VALUES (?,?,?,?,?,?,?,?,?) `;
+    // Add job into database
+    const insertProjectQuery = `INSERT INTO jobs( jobTitle, jobType, joblocation, payType, minSalaray, maxSalaray, jobDescription, totalPersontoHire, clientID) VALUES (?,?,?,?,?,?,?,?,?) `;
     const queryParams = [
-      projectTitle,
-      skills,
-      budget,
-      projectDescription,
-      userId,
-      category,
-      milestoneTitle,
-      milestoneDueDate,
-      milestoneAmount,
+      jobTitle,
+      jobType,
+      joblocation,
+      payType,
+      minSalaray,
+      maxSalaray,
+      jobDescription,
+      totalPersontoHire,
+      userId
     ];
     const insertFileResult = await queryRunner(insertProjectQuery, queryParams);
-
-    // Add files into database
     if (insertFileResult[0].affectedRows > 0) {
-      let projectID = insertFileResult[0].insertId;
-      if (req.files.length > 0) {
-        for (const file of req.files) {
-          const insertFileResult = await queryRunner(
-            "INSERT INTO projectfiles (fileUrl, fileKey, projectID) VALUES (?, ?, ?)",
-            [file.location, file.key, projectID]
-          );
-          if (insertFileResult.affectedRows <= 0) {
-            return res.status(500).json({
-              statusCode: 500,
-              message: "Failed to add files",
-            });
-          }
-        }
-      }
-    } else {
       return res.status(200).json({
         statusCode: 200,
-        message: "Failed to add project",
+        message: "Job created successfully.",
+      });
+    } else {
+      return res.status(500).json({
+        statusCode: 500,
+        message: "Failed to add jobs",
       });
     }
-    res.status(200).json({
-      statusCode: 200,
-      message: "Scout Created successfully",
-    });
+
   } catch (error) {
     console.log("Error: ", error);
     return res.status(500).json({
-      message: "Failed to add Project",
+      message: "Failed to add job",
       message: error.message,
+    });
+  }
+};
+
+exports.getAllJob = async (req, res) => {
+  try {
+    const getProjectQuery = `
+    SELECT  j.*, u.name FROM jobs j
+    LEFT JOIN users u ON u.id = j.clientID
+    `;
+
+    const selectResult = await queryRunner(getProjectQuery);
+
+    if (selectResult[0].length > 0) {
+      res.status(200).json({
+        statusCode: 200,
+        message: "Success",
+        data: selectResult[0]
+      });
+    } else {
+      res.status(200).json({
+        data: [],
+        message: "Jobs Not Found",
+      });
+    }
+  } catch (error) {
+    console.error("Query error: ", error);
+    return res.status(500).json({
+      statusCode: 500,
+      message: "Failed to get jobs",
+      error: error.message,
+    });
+  }
+};
+
+exports.getJobById = async (req, res) => {
+  const { id } = req.params
+  try {
+    const getProjectQuery = `
+    SELECT  j.*, u.name FROM jobs j
+    LEFT JOIN users u ON u.id = j.clientID
+    WHERE j.id = ?
+    `;
+
+    const selectResult = await queryRunner(getProjectQuery, [id]);
+
+    if (selectResult[0].length > 0) {
+      res.status(200).json({
+        statusCode: 200,
+        message: "Success",
+        data: selectResult[0]
+      });
+    } else {
+      res.status(200).json({
+        data: [],
+        message: "Jobs Not Found",
+      });
+    }
+  } catch (error) {
+    console.error("Query error: ", error);
+    return res.status(500).json({
+      statusCode: 500,
+      message: "Failed to get jobs",
+      error: error.message,
+    });
+  }
+};
+
+exports.getJobByClient = async (req, res) => {
+  const { userId } = req.user;
+  try {
+    const getJobQuery = `
+       SELECT  j.*, u.name FROM jobs j
+       LEFT JOIN users u ON u.id = j.clientID
+       WHERE u.id = ?
+    `;
+    const selectResult = await queryRunner(getJobQuery, [userId]);
+
+    if (selectResult[0].length > 0) {
+      res.status(200).json({
+        statusCode: 200,
+        message: "Success",
+        data: selectResult[0]
+      });
+    } else {
+      res.status(200).json({
+        data: [],
+        message: "Job Not Found",
+      });
+    }
+  } catch (error) {
+    console.error("Query error: ", error);
+    return res.status(500).json({
+      statusCode: 500,
+      message: "Failed to get job",
+      error: error.message,
+    });
+  }
+};
+
+exports.applyJob = async function (req, res) {
+  const { userId } = req.user;
+  const { name, experience, freelancerId, jobId} = req.body;
+  const files = req.files
+
+  try {
+    // Add job_proposals into database
+    const insertProposalsQuery = `INSERT INTO job_proposals(name, experience, jobId, clientId, freelancerId, fileUrl, fileKey) VALUES (?,?,?,?,?,?,?) `;
+    const values = [name, experience, jobId, userId, freelancerId, files[0].location, files[0].key]
+    console.log("values: ", values)
+    const insertFileResult = await queryRunner(insertProposalsQuery, values);
+
+     if (insertFileResult[0].affectedRows > 0) {
+      return res.status(200).json({
+        statusCode: 200,
+        message: "Job Proposal submitted successfully",
+      });
+    } else {
+      return res.status(200).json({
+        statusCode: 200,
+        message: "Failed to add job proposals",
+      });
+    }
+
+  } catch (error) {
+    console.log("Error: ", error);
+    return res.status(500).json({
+      message: "Failed to add job proposals",
+      message: error.message,
+    });
+  }
+};
+
+exports.getJobProposalsByClient = async (req, res) => {
+   const { jobId } = req.params;
+  try {
+    const getJobQuery = `
+    SELECT  jp.*,
+    f.id AS freelancerId, CONCAT(f.firstName, ' ', f.lastName) AS freelancerName,
+    f.fileUrl as candidateImg
+    FROM job_proposals jp
+    LEFT JOIN jobs j ON j.id = jp.jobId
+    LEFT JOIN freelancers f ON f.id = jp.freelancerId
+    WHERE j.id = ?
+     `;
+    const selectResult = await queryRunner(getJobQuery, [jobId]);
+
+    if (selectResult[0].length > 0) {
+      res.status(200).json({
+        statusCode: 200,
+        message: "Success",
+        data: selectResult[0]
+      });
+    } else {
+      res.status(200).json({
+        data: [],
+        message: "job Not Found",
+      });
+    }
+  } catch (error) {
+    console.error("Query error: ", error);
+    return res.status(500).json({
+      statusCode: 500,
+      message: "Failed to get job",
+      error: error.message,
     });
   }
 };
