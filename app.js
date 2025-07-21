@@ -3,7 +3,7 @@ const bodyParser = require("body-parser");
 require("dotenv").config();
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-const socketHandler = require('./utils/socketHandler')
+const socketHandler = require('./socketHandler')
 
 const userRoutes = require('./routes/userRoutes')
 const projectRoutes = require('./routes/projectRoutes')
@@ -14,7 +14,7 @@ const clientRoutes = require('./routes/clientRoutes')
 const stripeRoutes = require('./routes/stripe');
 const notificationRoutes = require('./routes/notificationRoutes');
 const jobRoutes = require('./routes/jobRoutes');
-
+const messageRoutes = require('./routes/messageRoutes');
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerFile = require('./swagger/swagger-output.json'); 
@@ -33,20 +33,20 @@ const io = new Server(server, {
     methods: ['GET', 'POST'],
   },
 });
-
+socketHandler(io)
 //  Socket connection and room handling
-io.on("connection", (socket) => {
-  console.log(" Socket connected:", socket.id);
+// io.on("connection", (socket) => {
+//   console.log(" Socket connected:", socket.id);
 
-  socket.on("join", (userId) => {
-    socket.join(`user_${userId}`);
-    console.log(`User joined room: user_${userId}`);
-  });
+//   socket.on("join", (userId) => {
+//     socket.join(`user_${userId}`);
+//     console.log(`User joined room: user_${userId}`);
+//   });
 
-  socket.on("disconnect", () => {
-    console.log(" Socket disconnected:", socket.id);
-  });
-});
+//   socket.on("disconnect", () => {
+//     console.log(" Socket disconnected:", socket.id);
+//   });
+// });
 
 //  Attach io to every request
 app.use((req, res, next) => {
@@ -85,6 +85,8 @@ app.use("/order", orderRoutes);
 app.use("/client", clientRoutes);
 app.use("/stripe", stripeRoutes);
 app.use("/notifications", notificationRoutes);
+app.use("/messages", messageRoutes);
+
 
 server.listen(2300, () => {
   console.log("Server is running on port 2300");

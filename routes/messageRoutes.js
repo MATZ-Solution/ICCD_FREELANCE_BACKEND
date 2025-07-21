@@ -5,7 +5,12 @@ const { verifyToken } = require("../middleware/authenticate");
 const s3Upload = require('../middleware/s3Upload');
 
 //  s3Upload.array('files', 5)
-router.get("/getAllMessage" , messageController.getAllMessage);
+router.get("/getMessageByUser", verifyToken, messageController.getMessageByUser);
+router.get("/getAllMessage", verifyToken, messageController.getAllMessage);
+
+router.post("/addMessageByUser", verifyToken, messageController.addMessageByUser);
+
+
 
 
 module.exports = router;
