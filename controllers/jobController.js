@@ -51,6 +51,7 @@ exports.addJob = async function (req, res) {
 
 exports.getAllJob = async (req, res) => {
   const { jobTitle, jobType, joblocation } = req.query;
+  console.log("req.query: ", req.query)
   try {
     const queryParams = [];
     const queryValue = [];
@@ -61,7 +62,7 @@ exports.getAllJob = async (req, res) => {
     }
     if (jobType) {
       queryParams.push(` j.jobType LIKE ? `);
-      queryValue.push(`%${jobType}% `);
+      queryValue.push(`%${jobType}%`);
     }
     if (joblocation) {
       queryParams.push(` j.joblocation LIKE ? `);
@@ -70,6 +71,9 @@ exports.getAllJob = async (req, res) => {
     if (queryParams.length > 0) {
       getProjectQuery += "WHERE" + ` ${queryParams.join(" AND ")} `;
     }
+    console.log("getProjectQuery: ", getProjectQuery)
+    console.log("queryValue: ", queryValue)
+
     const selectResult = await queryRunner(getProjectQuery, queryValue);
     if (selectResult[0].length > 0) {
       res.status(200).json({
