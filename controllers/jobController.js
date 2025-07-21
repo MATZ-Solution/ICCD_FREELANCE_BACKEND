@@ -49,6 +49,74 @@ exports.addJob = async function (req, res) {
   }
 };
 
+exports.editJob = async function (req, res) {
+  const { id : jobId } = req.params;
+
+  const {
+    jobTitle,
+    jobType,
+    joblocation,
+    payType,
+    minSalaray,
+    maxSalaray,
+    jobDescription,
+    totalPersontoHire,
+  } = req.body;
+
+  console.log("Edit Job Request Body:", req.body);
+
+  try {
+    const updateJobQuery = `
+      UPDATE jobs 
+      SET 
+        jobTitle = ?, 
+        jobType = ?, 
+        joblocation = ?, 
+        payType = ?, 
+        minSalaray = ?, 
+        maxSalaray = ?, 
+        jobDescription = ?, 
+        totalPersontoHire = ?
+      WHERE id = ?
+    `;
+
+    const queryParams = [
+      jobTitle,
+      jobType,
+      joblocation,
+      payType,
+      minSalaray,
+      maxSalaray,
+      jobDescription,
+      totalPersontoHire,
+      jobId,
+    ];
+
+    const result = await queryRunner(updateJobQuery, queryParams);
+
+    if (result?.[0]?.affectedRows > 0) {
+      return res.status(200).json({
+        statusCode: 200,
+        message: "Job updated successfully.",
+      });
+    } else {
+      return res.status(404).json({
+        statusCode: 404,
+        message: "No job found with the given ID.",
+      });
+    }
+  } catch (error) {
+    console.error("Edit Job Error:", error);
+    return res.status(500).json({
+      statusCode: 500,
+      message: "Failed to edit job",
+      error: error.message,
+    });
+  }
+};
+
+
+
 exports.getAllJob = async (req, res) => {
   const { jobTitle, jobType, joblocation } = req.query;
   console.log("req.query: ", req.query)
