@@ -11,7 +11,7 @@ exports.addJob = async function (req, res) {
     minSalaray,
     maxSalaray,
     jobDescription,
-    totalPersontoHire
+    totalPersontoHire,
   } = req.body;
 
   try {
@@ -26,7 +26,7 @@ exports.addJob = async function (req, res) {
       maxSalaray,
       jobDescription,
       totalPersontoHire,
-      userId
+      userId,
     ];
     const insertFileResult = await queryRunner(insertProjectQuery, queryParams);
     if (insertFileResult[0].affectedRows > 0) {
@@ -40,7 +40,6 @@ exports.addJob = async function (req, res) {
         message: "Failed to add jobs",
       });
     }
-
   } catch (error) {
     console.log("Error: ", error);
     return res.status(500).json({
@@ -51,19 +50,32 @@ exports.addJob = async function (req, res) {
 };
 
 exports.getAllJob = async (req, res) => {
+  const { jobTitle, jobType, joblocation } = req.query;
   try {
-    const getProjectQuery = `
-    SELECT  j.*, u.name FROM jobs j
-    LEFT JOIN users u ON u.id = j.clientID
-    `;
-
-    const selectResult = await queryRunner(getProjectQuery);
-
+    const queryParams = [];
+    const queryValue = [];
+    let getProjectQuery = `SELECT j.*, u.name FROM jobs j LEFT JOIN users u ON u.id = j.clientID `;
+    if (jobTitle) {
+      queryParams.push(` j.jobTitle LIKE ? `);
+      queryValue.push(`%${jobTitle}%`);
+    }
+    if (jobType) {
+      queryParams.push(` j.jobType LIKE ? `);
+      queryValue.push(`%${jobType}% `);
+    }
+    if (joblocation) {
+      queryParams.push(` j.joblocation LIKE ? `);
+      queryValue.push(`%${joblocation}%`);
+    }
+    if (queryParams.length > 0) {
+      getProjectQuery += "WHERE" + ` ${queryParams.join(" AND ")} `;
+    }
+    const selectResult = await queryRunner(getProjectQuery, queryValue);
     if (selectResult[0].length > 0) {
       res.status(200).json({
         statusCode: 200,
         message: "Success",
-        data: selectResult[0]
+        data: selectResult[0],
       });
     } else {
       res.status(200).json({
@@ -82,7 +94,7 @@ exports.getAllJob = async (req, res) => {
 };
 
 exports.getJobById = async (req, res) => {
-  const { id } = req.params
+  const { id } = req.params;
   try {
     const getProjectQuery = `
     SELECT  j.*, u.name FROM jobs j
@@ -96,7 +108,7 @@ exports.getJobById = async (req, res) => {
       res.status(200).json({
         statusCode: 200,
         message: "Success",
-        data: selectResult[0]
+        data: selectResult[0],
       });
     } else {
       res.status(200).json({
@@ -128,7 +140,7 @@ exports.getJobByClient = async (req, res) => {
       res.status(200).json({
         statusCode: 200,
         message: "Success",
-        data: selectResult[0]
+        data: selectResult[0],
       });
     } else {
       res.status(200).json({
@@ -148,17 +160,25 @@ exports.getJobByClient = async (req, res) => {
 
 exports.applyJob = async function (req, res) {
   const { userId } = req.user;
-  const { name, experience, freelancerId, jobId} = req.body;
-  const files = req.files
+  const { name, experience, freelancerId, jobId } = req.body;
+  const files = req.files;
 
   try {
     // Add job_proposals into database
     const insertProposalsQuery = `INSERT INTO job_proposals(name, experience, jobId, clientId, freelancerId, fileUrl, fileKey) VALUES (?,?,?,?,?,?,?) `;
-    const values = [name, experience, jobId, userId, freelancerId, files[0].location, files[0].key]
-    console.log("values: ", values)
+    const values = [
+      name,
+      experience,
+      jobId,
+      userId,
+      freelancerId,
+      files[0].location,
+      files[0].key,
+    ];
+    console.log("values: ", values);
     const insertFileResult = await queryRunner(insertProposalsQuery, values);
 
-     if (insertFileResult[0].affectedRows > 0) {
+    if (insertFileResult[0].affectedRows > 0) {
       return res.status(200).json({
         statusCode: 200,
         message: "Job Proposal submitted successfully",
@@ -169,7 +189,6 @@ exports.applyJob = async function (req, res) {
         message: "Failed to add job proposals",
       });
     }
-
   } catch (error) {
     console.log("Error: ", error);
     return res.status(500).json({
@@ -180,7 +199,7 @@ exports.applyJob = async function (req, res) {
 };
 
 exports.getJobProposalsByClient = async (req, res) => {
-   const { jobId } = req.params;
+  const { jobId } = req.params;
   try {
     const getJobQuery = `
     SELECT  jp.*,
@@ -197,7 +216,7 @@ exports.getJobProposalsByClient = async (req, res) => {
       res.status(200).json({
         statusCode: 200,
         message: "Success",
-        data: selectResult[0]
+        data: selectResult[0],
       });
     } else {
       res.status(200).json({

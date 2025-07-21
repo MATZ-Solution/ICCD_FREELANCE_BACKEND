@@ -8,10 +8,11 @@ exports.getClientDashboardData = async (req, res) => {
     const getProjectQuery = `
     SELECT 
       (SELECT COUNT(*) FROM projects WHERE clientID = ? ) AS totalPostedProject,
-      (SELECT COUNT(*) FROM orders WHERE clientID = ? ) AS totalOrder
+      (SELECT COUNT(*) FROM orders WHERE clientID = ? ) AS totalOrder,
+      (SELECT COUNT(*) FROM jobs WHERE clientID = ? ) AS totalPostedJob
     `;
 
-    const selectResult = await queryRunner(getProjectQuery, [userId, userId]);
+    const selectResult = await queryRunner(getProjectQuery, [userId, userId, userId]);
 
     if (selectResult[0].length > 0) {
       res.status(200).json({

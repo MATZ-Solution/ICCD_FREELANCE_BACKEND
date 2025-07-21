@@ -20,7 +20,7 @@ const createPool = async () => {
       database:"matzsolu_iccd_freelance"
 
     // ######## ------- live database connection ########
-  // host: "127.0.0.1",
+  // host: "191.96.53.248",
   // port:"3306",
   // user:"matzsolu_powerhouse_new_user",
   //   password:"$^+)MLZYc5S)uo",
