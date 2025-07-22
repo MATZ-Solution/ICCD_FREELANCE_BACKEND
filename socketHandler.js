@@ -1,45 +1,53 @@
 const { queryRunner } = require("./helper/queryRunner");
 
-const users = {};
-
 const socketHandler = (io) => {
-
   io.on("connection", (socket) => {
-    console.log(" Socket connected:", socket.id);
+    console.log("Socket connected:", socket.id);
 
     const userId = socket.handshake.query.userId;
-    users[userId] = socket.id;
-
-    socket.on("join", (userId) => {
-      socket.join(`user_${userId}`);
-      console.log(`User joined room: user_${userId}`);
-    });
+    // Join user-specific room (supports multiple devices/tabs)
+    socket.join(`user_${userId}`);
+    console.log(`User ${userId} joined room: user_${userId}`);
 
     socket.on("sendMessage", async (data) => {
-      console.log("data: ", data);
+      console.log("Received data: ", data);
+
       try {
-        let { senderId, receiverId, messages } = data;
-        let query = `INSERT INTO messages(senderId, receiverId, messages) VALUES(?, ?, ?)`;
-        const selectResult = await queryRunner(query, [
+        const { senderId, receiverId, messages } = data;
+
+        const insertQuery = `
+          INSERT INTO messages(senderId, receiverId, messages)
+          VALUES (?, ?, ?)
+        `;
+        const insertResult = await queryRunner(insertQuery, [
           senderId,
           receiverId,
           messages,
         ]);
 
-        const receiverSocketId = users[receiverId];
-        if (receiverSocketId) {
-          io.to(receiverSocketId).emit("receive_message", selectResult[0]);
-        }
+        // Build the message object to send
+        const message = {
+          messageId: insertResult.insertId,
+          senderId,
+          receiverId,
+          messages,
+          created_at: new Date().toISOString(),
+        };
+
+        // Emit message to receiver's room (covers all their devices)
+        io.to(`user_${receiverId}`).emit("receive_message", message);
+
+        // Optional: Echo message to sender's devices too (to update sender UI instantly)
+        // io.to(`user_${senderId}`).emit("message_sent", message);
 
       } catch (err) {
-        console.log("error: ", err);
+        console.error("Message sending error:", err);
       }
     });
 
     socket.on("disconnect", () => {
-      console.log(" Socket disconnected:", socket.id);
+      console.log("Socket disconnected:", socket.id);
     });
-
   });
 };
 

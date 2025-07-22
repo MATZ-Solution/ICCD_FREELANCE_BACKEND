@@ -30,8 +30,60 @@ exports.addMessageByUser = async (req, res) => {
   }
 };
 
-exports.getMessageByUser = async (req, res) => {
-  const { userId, recipientId } = req.body;
+
+exports.getAllMessageByUser = async (req, res) => {
+  const { userId } = req.user;
+  try {
+    const query = `
+     SELECT 
+    m1.messageId AS message_id,
+    m1.messages,
+    m1.senderId,
+    m1.receiverId,
+    m1.created_at,
+    IF(m1.senderId = ?, m1.receiverId, m1.senderId) AS chat_partner_id,
+    u.name AS chat_partner_name
+    FROM messages m1
+    JOIN (
+      SELECT 
+          LEAST(senderId, receiverId) AS userA,
+          GREATEST(senderId, receiverId) AS userB,
+          MAX(messageId) AS last_message_id
+      FROM messages
+      WHERE senderId = ? OR receiverId = ?
+      GROUP BY userA, userB
+    ) groupedMessages ON m1.messageId = groupedMessages.last_message_id
+    JOIN users u ON u.id = IF(m1.senderId = ?, m1.receiverId, m1.senderId)
+    ORDER BY m1.created_at DESC;
+       `;
+
+    // const values = [userId, recipientId, recipientId, userId]
+    const selectResult = await queryRunner(query, [userId, userId, userId, userId]);
+
+    if (selectResult[0].length > 0) {
+      res.status(200).json({
+        statusCode: 200,
+        message: "Success",
+        data: selectResult[0]
+      });
+    } else {
+      res.status(200).json({
+        data: [],
+        message: "Failed to get messages",
+      });
+    }
+  } catch (error) {
+    console.error("Query error: ", error);
+    return res.status(500).json({
+      statusCode: 500,
+      message: "Failed to get messages",
+      error: error.message,
+    });
+  }
+};
+
+exports.getMessageByUserWithRecipitant = async (req, res) => {
+  const { userId, recipientId } = req.query;
   try {
     const query = `
         SELECT * FROM messages
