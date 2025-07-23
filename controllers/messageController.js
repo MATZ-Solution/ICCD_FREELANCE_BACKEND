@@ -83,14 +83,16 @@ exports.getAllMessageByUser = async (req, res) => {
 };
 
 exports.getMessageByUserWithRecipitant = async (req, res) => {
-  const { userId, recipientId } = req.query;
+  const { userId, recipientId, page } = req.query;
+  const limit = 15
+  const offset = (page - 1 ) * limit
   try {
     const query = `
         SELECT * FROM messages
         WHERE (senderId = ? AND receiverId = ?)
-        OR (senderId = ? AND receiverId = ?) `;
+        OR (senderId = ? AND receiverId = ?) LIMIT ? OFFSET ?`;
 
-    const values = [userId, recipientId, recipientId, userId]
+    const values = [userId, recipientId, recipientId, userId, limit, offset]
     const selectResult = await queryRunner(query, values);
 
     if (selectResult[0].length > 0) {
