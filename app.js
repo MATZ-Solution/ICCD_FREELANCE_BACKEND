@@ -23,32 +23,18 @@ const { getConnectionFromPool } = require("./config/connection");
 const http = require("http");
 const { Server } = require("socket.io");
 
-const app = express(); // Initialize app first
-const server = http.createServer(app); // Use http.createServer to create the server
+const app = express(); 
+const server = http.createServer(app); 
 
-// ✅ Initialize socket.io on the server
 const io = new Server(server, {
   cors: {
-    origin: '*', // Update with frontend origin in production
+    origin: '*',
     methods: ['GET', 'POST'],
   },
 });
+app.set('io', io);
 socketHandler(io)
-//  Socket connection and room handling
-// io.on("connection", (socket) => {
-//   console.log(" Socket connected:", socket.id);
 
-//   socket.on("join", (userId) => {
-//     socket.join(`user_${userId}`);
-//     console.log(`User joined room: user_${userId}`);
-//   });
-
-//   socket.on("disconnect", () => {
-//     console.log(" Socket disconnected:", socket.id);
-//   });
-// });
-
-//  Attach io to every request
 app.use((req, res, next) => {
   req.io = io;
   next();

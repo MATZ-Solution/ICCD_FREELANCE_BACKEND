@@ -51,7 +51,7 @@ exports.sendNotification = async (req, res) => {
 exports.getNotifications = async (req, res) => {
   try {
     const { userId } = req.user;
-    const { role } = req.query;
+    const { type } = req.query;
 
     let sql = `
       SELECT n.*, u.name AS sender_name, u.email AS sender_email
@@ -61,10 +61,9 @@ exports.getNotifications = async (req, res) => {
     `;
 
     const params = [userId];
-
-    if (role) {
-      sql += ` AND n.type = ?`;
-      params.push(role);
+    if (type) {
+      sql += ` AND n.type IN (?, 'all')`;
+      params.push(type);
     }
 
     sql += ` ORDER BY n.created_at DESC`;

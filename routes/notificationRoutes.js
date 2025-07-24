@@ -8,7 +8,7 @@ const { verifyToken } = require("../middleware/authenticate");
 // router.put('/read/:id', verifyToken,  MarkAsRead);
 
 router.post('/create', verifyToken , sendNotification);
-router.get('/get', verifyToken,  getNotifications);
+router.get('/getNotification', verifyToken,  getNotifications);
 router.patch("/read/:id", markAsRead); 
 
 module.exports = router;

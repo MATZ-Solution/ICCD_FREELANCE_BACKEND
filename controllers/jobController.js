@@ -1,4 +1,5 @@
 const { queryRunner } = require("../helper/queryRunner");
+const handleNotifications = require("../utils/sendnotification")
 
 exports.addJob = async function (req, res) {
   const { userId } = req.user;
@@ -30,10 +31,22 @@ exports.addJob = async function (req, res) {
     ];
     const insertFileResult = await queryRunner(insertProjectQuery, queryParams);
     if (insertFileResult[0].affectedRows > 0) {
+
+      let io = req.app.get('io')
+
+      await handleNotifications(io, 'freelancer_all', 
+        {sender_id: userId, 
+         receiver_id: 9,
+         title: 'New Job',
+         message : "please check new job",
+         type: 'all'}
+      )
+
       return res.status(200).json({
         statusCode: 200,
         message: "Job created successfully.",
       });
+
     } else {
       return res.status(500).json({
         statusCode: 500,
@@ -50,7 +63,7 @@ exports.addJob = async function (req, res) {
 };
 
 exports.editJob = async function (req, res) {
-  const { id : jobId } = req.params;
+  const { id: jobId } = req.params;
 
   const {
     jobTitle,
@@ -114,8 +127,6 @@ exports.editJob = async function (req, res) {
     });
   }
 };
-
-
 
 exports.getAllJob = async (req, res) => {
   const { jobTitle, jobType, joblocation } = req.query;
