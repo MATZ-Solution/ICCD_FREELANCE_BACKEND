@@ -90,7 +90,7 @@ exports.getMessageByUserWithRecipitant = async (req, res) => {
     const query = `
         SELECT * FROM messages
         WHERE (senderId = ? AND receiverId = ?)
-        OR (senderId = ? AND receiverId = ?) LIMIT ? OFFSET ?`;
+        OR (senderId = ? AND receiverId = ?) ORDER BY created_at DESC LIMIT ? OFFSET ?`;
 
     const values = [userId, recipientId, recipientId, userId, limit, offset]
     const selectResult = await queryRunner(query, values);
@@ -99,7 +99,7 @@ exports.getMessageByUserWithRecipitant = async (req, res) => {
       res.status(200).json({
         statusCode: 200,
         message: "Success",
-        data: selectResult[0]
+        data: selectResult[0].reverse()
       });
     } else {
       res.status(200).json({
