@@ -85,11 +85,12 @@ exports.getNotifications = async (req, res) => {
 
 // COUNT UNREAD MESSAGES
 exports.countUnReadMesg = async (req, res) => {
-  const { userId } = req.params;
+  const { id, type }  = req.query
+  console.log("req query: ", req.query)
   try {
     const result = await queryRunner(
-      `SELECT COUNT(*) AS count FROM notifications WHERE receiver_id = ? AND is_read = 0`,
-      [userId]
+      `SELECT COUNT(*) AS count FROM notifications WHERE  receiver_id = ? AND type = ? AND is_read = 0`,
+      [id, type]
     );
     res.status(200).json({
       message: "success",
@@ -106,11 +107,12 @@ exports.countUnReadMesg = async (req, res) => {
 
 // UPDATE READ MESSAGES
 exports.updateReadMesg = async (req, res) => {
-  const { userId } = req.params;
+  const { id, type }  = req.query
+
   try {
     const result = await queryRunner(
-      `UPDATE notifications SET is_read = 1 WHERE receiver_id = ? AND is_read = 0`,
-      [userId]
+      `UPDATE notifications SET is_read = 1 WHERE receiver_id = ? AND type = ? AND is_read = 0`,
+      [id, type]
     );
     res.status(200).json({
       message: "success",

@@ -11,8 +11,8 @@ const { verifyToken } = require("../middleware/authenticate");
 // router.patch("/read/:id", markAsRead); 
 
 router.get('/getNotification/:id', verifyToken,  notificationController.getNotifications);
-router.get("/unread-count/:userId", notificationController.countUnReadMesg)
-router.put("/mark-read/:userId", notificationController.updateReadMesg)
+router.get("/unread-count", notificationController.countUnReadMesg)
+router.put("/mark-read", notificationController.updateReadMesg)
 
 module.exports = router;
 
