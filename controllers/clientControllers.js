@@ -1,5 +1,5 @@
 const { queryRunner } = require("../helper/queryRunner");
-const {deleteS3File} = require("../utils/deleteS3Files")
+const { deleteS3File } = require("../utils/deleteS3Files")
 
 exports.getClientDashboardData = async (req, res) => {
   const { userId } = req.user;
@@ -39,9 +39,9 @@ exports.getClientDashboardData = async (req, res) => {
 exports.clientEditProfile = async function (req, res) {
   const { userId } = req.user;
   const { name, about, filekey } = req.body;
+  console.log("req.body: ", req.body)
   try {
 
-    // Add project into database
     let fields = [];
     let column = [];
 
@@ -55,29 +55,26 @@ exports.clientEditProfile = async function (req, res) {
     }
 
     if (req.files.length > 0) {
-       await deleteS3File(filekey);
+      // await deleteS3File(filekey);
       fields.push(req.files[0]?.location);
       fields.push(req.files[0]?.key);
       column.push(" fileUrl = ? ");
       column.push(" filekey = ? ");
-
     }
     const insertFileResult = await queryRunner(`UPDATE users SET ${column.join(',')} WHERE id = ? `,
       [...fields, userId]);
 
     if (insertFileResult[0].affectedRows > 0) {
-      let result =  await queryRunner(`SELECT id, name, email, about, fileUrl as userImg, fileKey FROM users WHERE id = ?`, [userId]);
+      let result = await queryRunner(`SELECT id, name, email, about, fileUrl as userImg, fileKey FROM users WHERE id = ?`, [userId]);
       return res.status(200).json({
         statusCode: 200,
         message: "Profile Edit successfully",
         data: result[0][0]
-        // freelancerId: freelancerResult[0].insertId
       });
     } else {
       return res.status(500).json({
         statusCode: 200,
         message: "Failed to edit profile",
-        // freelancerId: freelancerResult[0].insertId
       });
     }
 
