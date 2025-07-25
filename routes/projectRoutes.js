@@ -13,5 +13,6 @@ router.get("/getProjectPropsalByClient/:projectId" ,verifyToken, projectControll
 router.post("/addProject" ,verifyToken, s3Upload.array('files', 5), projectController.addProject);
 router.post("/submitProposals" ,verifyToken, s3Upload.array('files', 5), projectController.applyProject);
 
+router.post("/editProject/:id" ,verifyToken, s3Upload.array('files', 5), projectController.editProject);
 
 module.exports = router;

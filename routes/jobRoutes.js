@@ -12,7 +12,7 @@ router.get("/getJobPropsalByClient/:jobId" ,verifyToken, jobController.getJobPro
 
 router.post("/addJob" ,verifyToken, jobController.addJob);
 router.post("/applyJob" ,verifyToken, s3Upload.array('files', 1), jobController.applyJob);
-router.post("/editJob/:id" ,verifyToken, jobController.editJob);
+router.put("/editJob/:id" ,verifyToken, jobController.editJob);
 
 
 

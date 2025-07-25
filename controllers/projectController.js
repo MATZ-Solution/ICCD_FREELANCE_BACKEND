@@ -274,3 +274,98 @@ exports.applyProject = async function (req, res) {
   }
 };
 
+exports.editProject = async function (req, res) {
+  const { id } = req.params;
+  const { userId } = req.user;
+
+  const {
+    budget,
+    category,
+    deadline,
+    deliverable,
+    description,
+    duration,
+    freelancerType,
+    language,
+    mode,
+    overview,
+    skills,
+    subCategory,
+    title,
+    total_freelancer,
+    type
+  } = req.body;
+
+  try {
+    const editProjectQuery = `
+      UPDATE projects SET 
+        title = ?, budget = ?, type = ?, description = ?, 
+        category = ?, subCategory = ?, deadline = ?, 
+        duration = ?, total_freelancer = ?, freelancerType = ?, 
+        overview = ?, deliverable = ?, mode = ? 
+      WHERE id = ? AND clientID = ?`;
+
+    const values = [
+      title, budget, type, description,
+      category, subCategory, deadline,
+      duration, total_freelancer, freelancerType,
+      overview, deliverable, mode,
+      id, userId
+    ];
+
+    const updateResult = await queryRunner(editProjectQuery, values);
+
+    if (updateResult.affectedRows === 0) {
+      return res.status(404).json({ message: "Project not found or unauthorized" });
+    }
+
+    await queryRunner("DELETE FROM project_skills WHERE project_id = ?", [id]);
+    if (Array.isArray(skills) && skills.length > 0) {
+      for (const skill of skills) {
+        await queryRunner(
+          "INSERT INTO project_skills (name, project_id) VALUES (?, ?)",
+          [skill, id]
+        );
+      }
+    }
+
+    await queryRunner("DELETE FROM project_language WHERE project_id = ?", [id]);
+    if (Array.isArray(language) && language.length > 0) {
+      for (const lang of language) {
+        await queryRunner(
+          "INSERT INTO project_language (name, project_id) VALUES (?, ?)",
+          [lang, id]
+        );
+      }
+    }
+
+    if (req.files && req.files.length > 0) {
+      await queryRunner("DELETE FROM projectfiles WHERE projectID = ?", [id]);
+
+      for (const file of req.files) {
+        const result = await queryRunner(
+          "INSERT INTO projectfiles (fileUrl, fileKey, projectID) VALUES (?, ?, ?)",
+          [file.location, file.key, id]
+        );
+
+        if (result.affectedRows <= 0) {
+          return res.status(500).json({
+            message: "Failed to save some files",
+          });
+        }
+      }
+    }
+
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Project updated successfully",
+    });
+
+  } catch (error) {
+    console.error("Edit Project Error:", error);
+    return res.status(500).json({
+      message: "Server Error: " + error.message,
+    });
+  }
+};
+

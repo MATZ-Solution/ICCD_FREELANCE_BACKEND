@@ -174,6 +174,7 @@ exports.getSingleGigs = async (req, res) => {
       GROUP BY p.packageType
       `;
     const selectResult = await queryRunner(getProjectQuery, [gigID]);
+    console.log("selectResult: ", selectResult[0])
     const {
       title,
       category,
@@ -294,6 +295,7 @@ exports.getGigsByUser = async (req, res) => {
   }
 };
 
+// ############   FOR EDIT GIGS   #########
 exports.getGigsOverview = async (req, res) => {
   const { gigID } = req.params;
   try {
@@ -323,11 +325,75 @@ exports.getGigsOverview = async (req, res) => {
   }
 };
 
+exports.getGigsFiles = async (req, res) => {
+  const { gigID } = req.params;
+  try {
+    const getProjectQuery = `SELECT * FROM gigsfiles WHERE gigID = ?`;
+
+    const selectResult = await queryRunner(getProjectQuery, [gigID]);
+
+    if (selectResult[0].length > 0) {
+      res.status(200).json({
+        statusCode: 200,
+        message: "Success",
+        data: selectResult[0]
+      });
+    } else {
+      res.status(200).json({
+        data: [],
+        message: "Gigs Not Found",
+      });
+    }
+  } catch (error) {
+    console.error("Query error: ", error);
+    return res.status(500).json({
+      statusCode: 500,
+      message: "Failed to get gigs",
+      error: error.message,
+    });
+  }
+};
+
+exports.editGigsFiles = async function (req, res) {
+  const { gigId } = req.params;
+  try {
+
+    if (req.files && req.files?.length > 0) {
+
+      for (const file of req.files) {
+        // await deleteS3File(fileKey);
+        console.log("1")
+        const insertFileResult = await queryRunner(
+          `INSERT INTO gigsfiles(fileUrl, fileKey, gigID) VALUES (?, ?, ?)`,
+          [file.location, file.key, gigId]
+        );
+        if (insertFileResult.affectedRows <= 0) {
+          return res.status(500).json({
+            statusCode: 500,
+            message: "Failed to edit files",
+          });
+        }
+      }
+    }
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Gigs files Edited successfully",
+    });
+
+  } catch (error) {
+    console.log("Error: ", error);
+    return res.status(500).json({
+      message: "Failed to edit Gigs",
+      message: error.message,
+    });
+  }
+};
+
+// ############   FOR EDIT GIGS END   #########
+
 exports.editGigs = async function (req, res) {
   const { gigId } = req.params;
   const { gigsTitle, category, subCategory, description, packages = '' } = req.body;
-  console.log("req body: ", req.body)
-
   try {
 
     if (gigsTitle && category && subCategory) {
@@ -349,10 +415,10 @@ exports.editGigs = async function (req, res) {
     }
 
     if (packages && packages?.premium) {
-      console.log("1")
-      const parsedPackages = JSON.parse(packages);
+      console.log("packages: ", packages)
+      // const parsedPackages = JSON.parse(packages);
       for (const key of ["basic", "standard", "premium"]) {
-        const pkg = parsedPackages[key];
+        const pkg = packages[key];
         if (!pkg) continue;
         const {
           packageType,
@@ -382,12 +448,14 @@ exports.editGigs = async function (req, res) {
           logoTransparency,
           price,
           gigId,
+          packageType
         ];
+        console.log("params: ", queryParams)
         await queryRunner(
-          `UPDATE packages SET packageType = ? name = ?, description = ?, deliveryTime = ?, 
+          `UPDATE packages SET packageType = ?, name = ?, description = ?, deliveryTime = ?, 
            revisions = ? , stationeryDesigns = ?, vectorFile = ?, sourceFile = ?, socialMediaKit = ?, 
-           printableFile = ?, logoTransparency = ?, price = ?,
-           WHERE gigID = ?`,
+           printableFile = ?, logoTransparency = ?, price = ?
+           WHERE gigID = ? AND packageType = ?`,
           queryParams
         );
       }
@@ -395,6 +463,7 @@ exports.editGigs = async function (req, res) {
 
     if (req.files && req.files?.length > 0) {
       for (const file of req.files) {
+        console.log("1")
         const insertFileResult = await queryRunner(
           `INSERT INTO gigsfiles(fileUrl, fileKey, gigID) VALUES (?, ?, ?)`,
           [file.location, file.key, gigId]
@@ -428,6 +497,5 @@ exports.checkDeleteFile = async (req, res) => {
     await deleteS3File(fileKey);
   } catch (error) {
     console.error("Query error: ", error);
-
   }
 };
