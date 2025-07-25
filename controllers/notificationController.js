@@ -29,7 +29,6 @@ exports.sendNotification = async (req, res) => {
       created_at: new Date().toISOString(),
     };
 
-    // Emit real-time notification via Socket.IO
     req.io.emit(`notify_${receiver_id}`, insertedNotification);
 
     return res.status(201).json({
@@ -50,7 +49,7 @@ exports.sendNotification = async (req, res) => {
 
 exports.getNotifications = async (req, res) => {
   try {
-    const { userId } = req.user;
+    const { id } = req.params;
     const { type } = req.query;
 
     let sql = `
@@ -60,9 +59,9 @@ exports.getNotifications = async (req, res) => {
       WHERE n.receiver_id = ?
     `;
 
-    const params = [userId];
+    const params = [id];
     if (type) {
-      sql += ` AND n.type IN (?, 'all')`;
+      sql += ` AND n.type = ?`;
       params.push(type);
     }
 
@@ -84,33 +83,44 @@ exports.getNotifications = async (req, res) => {
 };
 
 
-// MARK NOTIFICATION AS READ
-exports.markAsRead = async (req, res) => {
+// COUNT UNREAD MESSAGES
+exports.countUnReadMesg = async (req, res) => {
+  const { userId } = req.params;
   try {
-    const { id } = req.params;
-
-    const sql = `
-      UPDATE notifications
-      SET is_read = TRUE
-      WHERE id = ?
-    `;
-
-    const [result] = await queryRunner(sql, [id]);
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({
-        message: "Notification not found."
-      });
-    }
-
-    return res.status(200).json({
-      message: "Notification marked as read."
+    const result = await queryRunner(
+      `SELECT COUNT(*) AS count FROM notifications WHERE receiver_id = ? AND is_read = 0`,
+      [userId]
+    );
+    res.status(200).json({
+      message: "success",
+      data: result[0]
     });
-
-  } catch (error) {
-    console.error(" Error marking notification as read:", error);
+  } catch (err) {
+    console.log("err: ", err)
     return res.status(500).json({
-      error: "Failed to mark notification as read."
+      error: "Failed to count unread messages notifications"
     });
   }
+
+};
+
+// UPDATE READ MESSAGES
+exports.updateReadMesg = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const result = await queryRunner(
+      `UPDATE notifications SET is_read = 1 WHERE receiver_id = ? AND is_read = 0`,
+      [userId]
+    );
+    res.status(200).json({
+      message: "success",
+      data: result[0]
+    });
+  } catch (err) {
+    console.log("err: ", err)
+    return res.status(500).json({
+      error: "Failed to update isRead notifications"
+    });
+  }
+
 };
