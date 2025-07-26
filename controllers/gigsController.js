@@ -356,10 +356,19 @@ exports.getGigsFiles = async (req, res) => {
 
 exports.editGigsFiles = async function (req, res) {
   const { gigId } = req.params;
+  const { delFilesKey } = req.body;
+  console.log("gigs files: ", req.files)
   try {
-
+    if (delFilesKey && JSON.parse(delFilesKey).length > 0) {
+      for (const fileKey of JSON.parse(delFilesKey)) {
+        await deleteS3File(fileKey);
+        const insertFileResult = await queryRunner(
+          `DELETE FROM gigsfiles WHERE gigID = ? AND fileKey = ?`,
+          [gigId, fileKey]
+        );
+      }
+    }
     if (req.files && req.files?.length > 0) {
-
       for (const file of req.files) {
         // await deleteS3File(fileKey);
         console.log("1")
