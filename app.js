@@ -70,6 +70,8 @@ app.use("/freelancer", freelancerRoutes);
 app.use("/order", orderRoutes);
 app.use("/client", clientRoutes);
 app.use("/stripe", stripeRoutes);
+// app.use("/webhook", webhookRoute);
+
 app.use("/notifications", notificationRoutes);
 app.use("/messages", messageRoutes);
 
