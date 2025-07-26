@@ -7,12 +7,13 @@ const { verifyToken } = require("../middleware/authenticate");
 // router.get('/all', verifyToken ,  GetNotifications);
 // router.put('/read/:id', verifyToken,  MarkAsRead);
 
-// router.post('/create', verifyToken , sendNotification);
 // router.patch("/read/:id", markAsRead); 
 
-router.get('/getNotification/:id', verifyToken,  notificationController.getNotifications);
-router.get("/unread-count", notificationController.countUnReadMesg)
-router.put("/mark-read", notificationController.updateReadMesg)
+router.post('/create', verifyToken , notificationController.sendNotification);
+
+router.get('/getNotification', verifyToken,  notificationController.getNotifications);
+router.get("/unread-count", verifyToken, notificationController.countUnReadMesg)
+router.put("/mark-read", verifyToken, notificationController.updateReadMesg)
 
 module.exports = router;
 

@@ -15,7 +15,7 @@ exports.sendNotification = async (req, res) => {
       receiver_id,
       title,
       message,
-      type
+      type,
     ]);
 
     const insertedNotification = {
@@ -33,23 +33,21 @@ exports.sendNotification = async (req, res) => {
 
     return res.status(201).json({
       message: "Notification sent successfully!",
-      data: insertedNotification
+      data: insertedNotification,
     });
-
   } catch (error) {
     console.error(" Error sending notification:", error);
     return res.status(500).json({
-      error: "Failed to send notification"
+      error: "Failed to send notification",
     });
   }
 };
-
 
 // GET NOTIFICATIONS FOR USER
 
 exports.getNotifications = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { userId } = req.user;
     const { type } = req.query;
 
     let sql = `
@@ -59,7 +57,7 @@ exports.getNotifications = async (req, res) => {
       WHERE n.receiver_id = ?
     `;
 
-    const params = [id];
+    const params = [userId];
     if (type) {
       sql += ` AND n.type = ?`;
       params.push(type);
@@ -71,58 +69,57 @@ exports.getNotifications = async (req, res) => {
 
     return res.status(200).json({
       message: "Notifications fetched successfully.",
-      data: results
+      data: results,
     });
-
   } catch (error) {
     console.error(" Error fetching notifications:", error);
     return res.status(500).json({
-      error: "Failed to fetch notifications"
+      error: "Failed to fetch notifications",
     });
   }
 };
 
-
 // COUNT UNREAD MESSAGES
 exports.countUnReadMesg = async (req, res) => {
-  const { id, type }  = req.query
-  console.log("req query: ", req.query)
+  const { userId } = req.user;
+  const { type } = req.query;
+
   try {
     const result = await queryRunner(
       `SELECT COUNT(*) AS count FROM notifications WHERE  receiver_id = ? AND type = ? AND is_read = 0`,
-      [id, type]
+      [userId, type]
     );
+    console.log("result: ", result[0][0]);
     res.status(200).json({
       message: "success",
-      data: result[0]
+      data: [{ count: result[0][0]?.count, type: type }],
     });
   } catch (err) {
-    console.log("err: ", err)
+    console.log("err: ", err);
     return res.status(500).json({
-      error: "Failed to count unread messages notifications"
+      error: "Failed to count unread messages notifications",
     });
   }
-
 };
 
 // UPDATE READ MESSAGES
 exports.updateReadMesg = async (req, res) => {
-  const { id, type }  = req.query
+  const { userId } = req.user;
+  const { type } = req.query;
 
   try {
     const result = await queryRunner(
       `UPDATE notifications SET is_read = 1 WHERE receiver_id = ? AND type = ? AND is_read = 0`,
-      [id, type]
+      [userId, type]
     );
     res.status(200).json({
       message: "success",
-      data: result[0]
+      data: result[0],
     });
   } catch (err) {
-    console.log("err: ", err)
+    console.log("err: ", err);
     return res.status(500).json({
-      error: "Failed to update isRead notifications"
+      error: "Failed to update isRead notifications",
     });
   }
-
 };

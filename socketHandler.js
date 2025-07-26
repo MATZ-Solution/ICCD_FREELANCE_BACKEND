@@ -10,6 +10,7 @@ const socketHandler = (io) => {
       console.log("Received data: ", data);
       try {
         const { senderId, receiverId, messages } = data;
+        console.log("data: ", data)
         const insertQuery = `
           INSERT INTO messages(senderId, receiverId, messages)
           VALUES (?, ?, ?)

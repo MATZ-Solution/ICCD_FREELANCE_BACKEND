@@ -242,14 +242,13 @@ exports.getProjectProposalsByClient = async (req, res) => {
 };
 
 exports.applyProject = async function (req, res) {
-  const { userId } = req.user;
-  const { name, experience, clientId, projectId} = req.body;
+  const { name, experience, clientId, projectId, freelancerId} = req.body;
   const files = req.files
 
   try {
     // Add project_proposals into database
     const insertProposalsQuery = `INSERT INTO project_proposals(name, experience, projectId, clientId, freelancerId, fileUrl, fileKey) VALUES (?,?,?,?,?,?,?) `;
-    const values = [name, experience, projectId, clientId, userId, files[0].location, files[0].key]
+    const values = [name, experience, projectId, clientId, freelancerId, files[0].location, files[0].key]
     console.log("values: ", values)
     const insertFileResult = await queryRunner(insertProposalsQuery, values);
 
