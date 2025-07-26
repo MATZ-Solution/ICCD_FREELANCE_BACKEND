@@ -1,5 +1,5 @@
 const { queryRunner } = require("../helper/queryRunner");
-const handleNotifications = require("../utils/sendnotification")
+const handleNotifications = require("../utils/sendnotification");
 
 exports.addJob = async function (req, res) {
   const { userId } = req.user;
@@ -31,22 +31,20 @@ exports.addJob = async function (req, res) {
     ];
     const insertFileResult = await queryRunner(insertProjectQuery, queryParams);
     if (insertFileResult[0].affectedRows > 0) {
+      // let io = req.app.get("io");
 
-      let io = req.app.get('io')
-
-      await handleNotifications(io, 'freelancer_all', 
-        {sender_id: userId, 
-         receiver_id: 9,
-         title: 'New Job',
-         message : "please check new job",
-         type: 'all'}
-      )
+      // await handleNotifications(io,
+      //   {sender_id: userId,
+      //    receiver_id: 9, // send client if from front-end
+      //    title: 'New Job',
+      //    message : "Check live notification",
+      //    type: 'freelancer'}
+      // )
 
       return res.status(200).json({
         statusCode: 200,
         message: "Job created successfully.",
       });
-
     } else {
       return res.status(500).json({
         statusCode: 500,
@@ -130,7 +128,7 @@ exports.editJob = async function (req, res) {
 
 exports.getAllJob = async (req, res) => {
   const { jobTitle, jobType, joblocation } = req.query;
-  console.log("req.query: ", req.query)
+  console.log("req.query: ", req.query);
   try {
     const queryParams = [];
     const queryValue = [];
@@ -150,8 +148,8 @@ exports.getAllJob = async (req, res) => {
     if (queryParams.length > 0) {
       getProjectQuery += "WHERE" + ` ${queryParams.join(" AND ")} `;
     }
-    console.log("getProjectQuery: ", getProjectQuery)
-    console.log("queryValue: ", queryValue)
+    console.log("getProjectQuery: ", getProjectQuery);
+    console.log("queryValue: ", queryValue);
 
     const selectResult = await queryRunner(getProjectQuery, queryValue);
     if (selectResult[0].length > 0) {
@@ -243,8 +241,10 @@ exports.getJobByClient = async (req, res) => {
 
 exports.applyJob = async function (req, res) {
   const { userId } = req.user;
-  const { name, experience, freelancerId, jobId } = req.body;
+  const { name, experience, freelancerId, projectId, clientId } = req.body;
   const files = req.files;
+
+  console.log("req.body: ", req.body)
 
   try {
     // Add job_proposals into database
@@ -252,8 +252,8 @@ exports.applyJob = async function (req, res) {
     const values = [
       name,
       experience,
-      jobId,
-      userId,
+      projectId,
+      clientId,
       freelancerId,
       files[0].location,
       files[0].key,
