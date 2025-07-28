@@ -13,7 +13,7 @@ router.post("/signIn", userController.signIn);
 router.post("/passwordReset", userController.passwordReset);
 router.post("/sendOtp", userController.sendOtp);
 router.post("/submitOtp", userController.submitOtp);
-router.post("/changePasword", userController.changePasword);
 router.post("/addFreelancerDetails",verifyToken,s3Upload.array('files', 5), userController.addFreelancerDetails);
+router.put("/changePasword", userController.changePasword);
 
 module.exports = router;

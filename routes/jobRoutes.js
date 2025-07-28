@@ -8,7 +8,7 @@ const s3Upload = require('../middleware/s3Upload');
 router.get("/getAllJob" ,verifyToken, jobController.getAllJob);
 router.get("/getJobById/:id" ,verifyToken, jobController.getJobById);
 router.get("/getJobsByClient" ,verifyToken, jobController.getJobByClient);
-router.get("/getJobPropsalByClient/:jobId" ,verifyToken, jobController.getJobProposalsByClient);
+router.get("/getJobPropsalByClient" ,verifyToken, jobController.getJobProposalsByClient);
 
 router.post("/addJob" ,verifyToken, jobController.addJob);
 router.post("/applyJob" ,verifyToken, s3Upload.array('files', 1), jobController.applyJob);

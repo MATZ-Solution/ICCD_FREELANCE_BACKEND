@@ -202,10 +202,10 @@ exports.changePasword = async function (req, res) {
     if (findUserResult[0].length > 0) {
       // ENCRYPT PASSWORD AND ADD TO DATABASE
       const hashPassword = await bcrypt.hash(password, 10);
-      const insertQuery = `UPDATE USERS SET password = ? WHERE email = ? `;
+      const insertQuery = `UPDATE users SET password = ? WHERE email = ? `;
       const insertResult = await queryRunner(insertQuery, [
         hashPassword,
-        findUser[0][0]?.email,
+        findUserResult[0][0]?.email,
       ]);
       if (insertResult[0].affectedRows > 0) {
         return res.status(200).json({
@@ -260,6 +260,10 @@ exports.addFreelancerDetails = async function (req, res) {
     });
   }
 };
+
+
+
+
 
 // ###################### Get Scout Members start #######################################
 exports.check = async function (req, res) {

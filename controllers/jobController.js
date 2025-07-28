@@ -244,8 +244,6 @@ exports.applyJob = async function (req, res) {
   const { name, experience, freelancerId, projectId, clientId } = req.body;
   const files = req.files;
 
-  console.log("req.body: ", req.body)
-
   try {
     // Add job_proposals into database
     const insertProposalsQuery = `INSERT INTO job_proposals(name, experience, jobId, clientId, freelancerId, fileUrl, fileKey) VALUES (?,?,?,?,?,?,?) `;
@@ -282,18 +280,17 @@ exports.applyJob = async function (req, res) {
 };
 
 exports.getJobProposalsByClient = async (req, res) => {
-  const { jobId } = req.params;
+  const { userId } = req.user
   try {
     const getJobQuery = `
-    SELECT  jp.*,
+    SELECT  jp.experience, jp.fileUrl,
     f.id AS freelancerId, CONCAT(f.firstName, ' ', f.lastName) AS freelancerName,
     f.fileUrl as candidateImg
     FROM job_proposals jp
-    LEFT JOIN jobs j ON j.id = jp.jobId
     LEFT JOIN freelancers f ON f.id = jp.freelancerId
-    WHERE j.id = ?
+    WHERE jp.clientId = ?
      `;
-    const selectResult = await queryRunner(getJobQuery, [jobId]);
+    const selectResult = await queryRunner(getJobQuery, [userId]);
 
     if (selectResult[0].length > 0) {
       res.status(200).json({

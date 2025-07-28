@@ -207,17 +207,17 @@ exports.getProjectById = async (req, res) => {
 
 exports.getProjectProposalsByClient = async (req, res) => {
    const { projectId } = req.params;
+   const { userId } = req.user
   try {
     const getProjectQuery = `
     SELECT  pp.*,
     f.id AS freelancerId, CONCAT(f.firstName, ' ', f.lastName) AS freelancerName,
     f.fileUrl as freelancerImg
     FROM project_proposals pp
-    LEFT JOIN projects p ON p.id = pp.projectId
     LEFT JOIN freelancers f ON f.id = pp.freelancerId
-    WHERE p.id = ?
+    WHERE pp.clientId = ?
      `;
-    const selectResult = await queryRunner(getProjectQuery, [projectId]);
+    const selectResult = await queryRunner(getProjectQuery, [userId]);
 
     if (selectResult[0].length > 0) {
       res.status(200).json({

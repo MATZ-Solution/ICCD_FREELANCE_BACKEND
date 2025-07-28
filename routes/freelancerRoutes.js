@@ -7,6 +7,7 @@ const s3Upload = require('../middleware/s3Upload');
 //  s3Upload.array('files', 5)
 router.get("/getFreelancerProfile" ,verifyToken, freelancerController.getFreelancerProfile);
 router.get("/checkIsFreelancer" ,verifyToken, freelancerController.checkIsFreelancer);
+router.get("/getFreelancerDashboardData" , verifyToken ,freelancerController.getFreelancerDashboardData);
 
 router.post("/addProfile" ,verifyToken, s3Upload.array('files', 5), freelancerController.addProfile);
 
