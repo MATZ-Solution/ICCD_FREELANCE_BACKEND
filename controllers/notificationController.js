@@ -48,7 +48,7 @@ exports.sendNotification = async (req, res) => {
 exports.getNotifications = async (req, res) => {
   try {
     const { userId } = req.user;
-    const { type } = req.query;
+    const { id, type } = req.query;
 
     let sql = `
       SELECT n.*, u.name AS sender_name, u.email AS sender_email
@@ -57,7 +57,7 @@ exports.getNotifications = async (req, res) => {
       WHERE n.receiver_id = ?
     `;
 
-    const params = [userId];
+    const params = [id];
     if (type) {
       sql += ` AND n.type = ?`;
       params.push(type);
@@ -82,12 +82,13 @@ exports.getNotifications = async (req, res) => {
 // COUNT UNREAD MESSAGES
 exports.countUnReadMesg = async (req, res) => {
   const { userId } = req.user;
-  const { type } = req.query;
+  const { id, type } = req.query;
+  console.log("userId: ", userId, "type: ", type);
 
   try {
     const result = await queryRunner(
       `SELECT COUNT(*) AS count FROM notifications WHERE  receiver_id = ? AND type = ? AND is_read = 0`,
-      [userId, type]
+      [id, type]
     );
     console.log("result: ", result[0][0]);
     res.status(200).json({
@@ -105,12 +106,12 @@ exports.countUnReadMesg = async (req, res) => {
 // UPDATE READ MESSAGES
 exports.updateReadMesg = async (req, res) => {
   const { userId } = req.user;
-  const { type } = req.query;
+  const { id, type } = req.query;
 
   try {
     const result = await queryRunner(
       `UPDATE notifications SET is_read = 1 WHERE receiver_id = ? AND type = ? AND is_read = 0`,
-      [userId, type]
+      [id, type]
     );
     res.status(200).json({
       message: "success",

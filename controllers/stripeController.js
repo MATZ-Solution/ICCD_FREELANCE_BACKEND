@@ -1,7 +1,7 @@
 const Stripe = require("stripe");
 const stripe = Stripe('sk_test_51QCl1eCDh3RtIJ6XOAYZzILYoBxvqCpnTuRhVr7IDCcCExq6cldGbuPSVmp1Ftd6psoxMidNp12erQi0XxDhcNsx004rxKaVIN');
 const {queryRunner} = require("../helper/queryRunner");
-
+const handleNotifications = require("../utils/sendnotification");
 
 
 // === Create Checkout Session ===
@@ -125,9 +125,22 @@ ON DUPLICATE KEY UPDATE
   packageType || null,
   revisions || null
 ];
+console.log("body",req.body);
+
 
     const result = await queryRunner(query, data);
-    const wasInserted = result.affectedRows === 1;
+    const wasInserted = result[0].affectedRows === 1;
+console.log("result",result[0].affectedRows);
+if( wasInserted ){
+      let io = req.app.get("io");
+      await handleNotifications(io,
+        {sender_id: client_id,
+         receiver_id: freelancer_id, // send client if from front-end
+         title: 'New Order',
+         message : "New Order Has Been Placed",
+         type: 'freelancer'}
+      )
+}
 
     res.status(wasInserted ? 201 : 200).json({
       message: wasInserted ? "Order saved successfully" : "Order updated successfully",
