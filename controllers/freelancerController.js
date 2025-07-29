@@ -6,10 +6,7 @@ exports.checkIsFreelancer = async (req, res) => {
   const { userId } = req.user;
   console.log("userId: ", userId);
   try {
-    const getProjectQuery = `
-    SELECT * FROM freelancers
-    WHERE userID = ?
-    `;
+    const getProjectQuery = `SELECT * FROM freelancers WHERE userID = ?`;
 
     const selectResult = await queryRunner(getProjectQuery, [userId]);
 
@@ -233,6 +230,10 @@ exports.addProfile = async function (req, res) {
       fields.push(about_description);
       column.push("about_description");
     }
+     if (userId) {
+      fields.push(userId);
+      column.push("userId");
+    }
 
     let freelancerResult;
 
@@ -240,6 +241,9 @@ exports.addProfile = async function (req, res) {
       const insertProjectQuery = `INSERT INTO freelancers(${column
         .map((item) => item)
         .join(",")}) VALUES (${fields.map((item) => "?").join(",")})`;
+
+        console.log("insertProjectQuery: ", insertProjectQuery)
+
       const insertFileResult = await queryRunner(insertProjectQuery, fields);
       freelancerResult = insertFileResult;
     }
@@ -329,6 +333,7 @@ exports.addProfile = async function (req, res) {
         message: "Failed to add Project",
       });
     }
+
     res.status(200).json({
       statusCode: 200,
       message: "Profile Edit successfully",

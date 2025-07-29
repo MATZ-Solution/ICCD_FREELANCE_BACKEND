@@ -122,7 +122,6 @@ exports.getAllGigs = async (req, res) => {
     }
     getProjectQuery += ` GROUP BY g.id `;
     const selectResult = await queryRunner(getProjectQuery);
-    // console.log("getData: ", getData)
 
     // const getData = selectResult[0].filter((data)=> data.id);
     // console.log("getData: ", getData)

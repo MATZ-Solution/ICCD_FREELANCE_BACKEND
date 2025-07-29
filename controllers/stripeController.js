@@ -1,8 +1,9 @@
 const Stripe = require("stripe");
-const stripe = Stripe('sk_test_51QCl1eCDh3RtIJ6XOAYZzILYoBxvqCpnTuRhVr7IDCcCExq6cldGbuPSVmp1Ftd6psoxMidNp12erQi0XxDhcNsx004rxKaVIN');
-const {queryRunner} = require("../helper/queryRunner");
+const stripe = Stripe(
+  "sk_test_51QCl1eCDh3RtIJ6XOAYZzILYoBxvqCpnTuRhVr7IDCcCExq6cldGbuPSVmp1Ftd6psoxMidNp12erQi0XxDhcNsx004rxKaVIN"
+);
+const { queryRunner } = require("../helper/queryRunner");
 const handleNotifications = require("../utils/sendnotification");
-
 
 // === Create Checkout Session ===
 exports.createCheckoutSession = async (req, res) => {
@@ -15,7 +16,7 @@ exports.createCheckoutSession = async (req, res) => {
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
-      line_items: orderDetails.map(item => ({
+      line_items: orderDetails.map((item) => ({
         price_data: {
           currency: "pkr",
           product_data: { name: item.name },
@@ -24,7 +25,8 @@ exports.createCheckoutSession = async (req, res) => {
         quantity: item.quantity,
       })),
       mode: "payment",
-      success_url: "http://localhost:5173/success?session_id={CHECKOUT_SESSION_ID}",
+      success_url:
+        "http://localhost:5173/success?session_id={CHECKOUT_SESSION_ID}",
       cancel_url: "http://localhost:5173/cancel",
       ...(customer_email
         ? { customer_email }
@@ -62,7 +64,9 @@ exports.getSession = async (req, res) => {
     res.json(session);
   } catch (error) {
     console.error("Stripe session retrieval error:", error.message);
-    res.status(500).json({ error: `Failed to retrieve session: ${error.message}` });
+    res
+      .status(500)
+      .json({ error: `Failed to retrieve session: ${error.message}` });
   }
 };
 
@@ -72,20 +76,20 @@ exports.processOrder = async (req, res) => {
     return res.status(500).json({ error: "Database connection not available" });
   }
 
- const {
-  id,
-  customer_email,
-  amount_total,
-  payment_status,
-  client_id,
-  freelancer_id,
-  gig_id,
-  quantity,
-  basePrice,
-  totalPrice,
-  packageType,
-  revisions
-} = req.body;
+  const {
+    id,
+    customer_email,
+    amount_total,
+    payment_status,
+    client_id,
+    freelancer_id,
+    gig_id,
+    quantity,
+    basePrice,
+    totalPrice,
+    packageType,
+    revisions,
+  } = req.body;
 
   if (!id) {
     return res.status(400).json({ error: "Session ID is required" });
@@ -110,40 +114,45 @@ ON DUPLICATE KEY UPDATE
   revisions = VALUES(revisions)
     `;
 
-   const data = [
-  id,
-  customer_email || null,
-  amount_total || 0,
-  payment_status || "unknown",
-  new Date().toISOString().slice(0, 19).replace("T", " "),
-  client_id || null,
-  freelancer_id || null,
-  gig_id || null,
-  quantity || null,
-  basePrice || null,
-  totalPrice || null,
-  packageType || null,
-  revisions || null
-];
-console.log("body",req.body);
-
+    const data = [
+      id,
+      customer_email || null,
+      amount_total || 0,
+      payment_status || "unknown",
+      new Date().toISOString().slice(0, 19).replace("T", " "),
+      client_id || null,
+      freelancer_id || null,
+      gig_id || null,
+      quantity || null,
+      basePrice || null,
+      totalPrice || null,
+      packageType || null,
+      revisions || null,
+    ];
+    console.log("body", req.body);
 
     const result = await queryRunner(query, data);
     const wasInserted = result[0].affectedRows === 1;
-console.log("result",result[0].affectedRows);
-if( wasInserted ){
+   
+    if (wasInserted) {
       let io = req.app.get("io");
-      await handleNotifications(io,
-        {sender_id: client_id,
-         receiver_id: freelancer_id, // send client if from front-end
-         title: 'New Order',
-         message : "New Order Has Been Placed",
-         type: 'freelancer'}
-      )
-}
+      await handleNotifications(io, {
+        sender_id: client_id,
+        receiver_id: freelancer_id, // send client if from front-end
+        title: "New Order",
+        message: "New Order Has Been Placed",
+        type: "freelancer",
+      });
+
+      // insert Intro message into database
+      let messageQuery = ` INSERT INTO messages(senderId, receiverId, messages) VALUES(?, ?, ?)  `
+      const result = await queryRunner(messageQuery, [client_id, freelancer_id, 'You are now communication each other']);
+    }
 
     res.status(wasInserted ? 201 : 200).json({
-      message: wasInserted ? "Order saved successfully" : "Order updated successfully",
+      message: wasInserted
+        ? "Order saved successfully"
+        : "Order updated successfully",
       sessionId: id,
       isNew: wasInserted,
     });
