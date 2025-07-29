@@ -183,12 +183,12 @@ exports.addProfile = async function (req, res) {
     languages,
     about_tagline,
     about_description,
-    educations,
+    education,
     certifications,
     skills,
   } = req.body;
 
-  console.log("education: ", educations);
+  console.log("education: ", education);
 
   try {
     let languagesArray;
@@ -207,8 +207,8 @@ exports.addProfile = async function (req, res) {
     }
 
     let educationArray;
-    if (educations && educations.length > 0) {
-      educationArray = JSON.parse(educations);
+    if (education && education.length > 0) {
+      educationArray = JSON.parse(education);
     }
 
     // Add project into database
@@ -267,7 +267,7 @@ exports.addProfile = async function (req, res) {
 
         const queryParams = [
           edu.institution,
-          edu.level,
+          edu.country,
           edu.title,
           edu.major,
           edu.year,

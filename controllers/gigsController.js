@@ -10,7 +10,6 @@ exports.addGigs = async function (req, res) {
     packages,
     freelancerId,
   } = req.body;
-
   try {
     // Add project into database
     const insertGigsQuery = `INSERT INTO gigs(title, description, category, subCategory, freelancer_id) VALUES (?,?,?,?,?) `;
