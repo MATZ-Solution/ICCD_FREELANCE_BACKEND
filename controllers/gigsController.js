@@ -109,7 +109,7 @@ exports.getAllGigs = async (req, res) => {
     let getProjectQuery = `
     SELECT 
         g.*,
-        f.firstName, f.lastName,
+        f.firstName, f.lastName, f.about_description,f.fileUrl as freelancerImg,
         GROUP_CONCAT(gf.fileUrl) AS fileUrls
       FROM gigs g
       LEFT JOIN freelancers f ON f.id = g.freelancer_id
