@@ -11,14 +11,14 @@ exports.checkIsFreelancer = async (req, res) => {
     const selectResult = await queryRunner(getProjectQuery, [userId]);
 
     if (selectResult[0].length > 0) {
-      res.status(200).json({
+     return res.status(200).json({
         statusCode: 200,
         message: "Success",
         data: selectResult[0],
         // data: filterData
       });
     } else {
-      res.status(200).json({
+      return res.status(200).json({
         data: [],
         message: "Profile Not Found",
       });
