@@ -89,6 +89,7 @@ exports.processOrder = async (req, res) => {
     totalPrice,
     packageType,
     revisions,
+    customerId
   } = req.body;
 
   if (!id) {
@@ -146,7 +147,7 @@ ON DUPLICATE KEY UPDATE
 
       // insert Intro message into database
       let messageQuery = ` INSERT INTO messages(senderId, receiverId, messages) VALUES(?, ?, ?)  `
-      const result = await queryRunner(messageQuery, [client_id, freelancer_id, 'You are now communication each other']);
+      const result = await queryRunner(messageQuery, [client_id, customerId, 'You are now communication each other']);
     }
 
     res.status(wasInserted ? 201 : 200).json({

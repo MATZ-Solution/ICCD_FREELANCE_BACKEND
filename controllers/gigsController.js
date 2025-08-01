@@ -10,7 +10,6 @@ exports.addGigs = async function (req, res) {
     packages,
     freelancerId,
   } = req.body;
-
   try {
     // Add project into database
     const insertGigsQuery = `INSERT INTO gigs(title, description, category, subCategory, freelancer_id) VALUES (?,?,?,?,?) `;
@@ -110,7 +109,7 @@ exports.getAllGigs = async (req, res) => {
     let getProjectQuery = `
     SELECT 
         g.*,
-        f.firstName, f.lastName,
+        f.firstName, f.lastName, f.about_description,f.fileUrl as freelancerImg,
         GROUP_CONCAT(gf.fileUrl) AS fileUrls
       FROM gigs g
       LEFT JOIN freelancers f ON f.id = g.freelancer_id
