@@ -305,9 +305,11 @@ exports.editProject = async function (req, res) {
         overview = ?, deliverable = ?, mode = ? 
       WHERE id = ? AND clientID = ?`;
 
+    const formattedDeadline = new Date(deadline).toISOString().slice(0, 19).replace('T', ' ');
+
     const values = [
       title, budget, type, description,
-      category, subCategory, deadline,
+      category, subCategory, formattedDeadline,
       duration, total_freelancer, freelancerType,
       overview, deliverable, mode,
       id, userId
