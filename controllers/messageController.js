@@ -33,7 +33,6 @@ exports.addMessageByUser = async (req, res) => {
 
 exports.getAllMessageByUser = async (req, res) => {
   const { userId } = req.user;
-  // console.log("userType: ", userType.id)
   try {
     const query = `
      SELECT 

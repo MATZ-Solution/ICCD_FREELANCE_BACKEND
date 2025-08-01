@@ -20,7 +20,7 @@ exports.createCheckoutSession = async (req, res) => {
         price_data: {
           currency: "pkr",
           product_data: { name: item.name },
-          unit_amount: Math.round(parseFloat(item.price) *100),
+          unit_amount: Math.round(parseFloat(item.price) * 100),
         },
         quantity: item.quantity,
       })),
@@ -31,9 +31,9 @@ exports.createCheckoutSession = async (req, res) => {
       ...(customer_email
         ? { customer_email }
         : {
-            customer_creation: "always",
-            billing_address_collection: "required",
-          }),
+          customer_creation: "always",
+          billing_address_collection: "required",
+        }),
     });
 
     res.json({ url: session.url });
@@ -72,10 +72,12 @@ exports.getSession = async (req, res) => {
 
 // === Insert or Update Order ===
 exports.processOrder = async (req, res) => {
+
+  console.log("process order called!")
+
   if (!queryRunner) {
     return res.status(500).json({ error: "Database connection not available" });
   }
-
   const {
     id,
     customer_email,
@@ -130,16 +132,17 @@ ON DUPLICATE KEY UPDATE
       packageType || null,
       revisions || null,
     ];
-    console.log("body", req.body);
 
     const result = await queryRunner(query, data);
+    console.log("result: ", result)
     const wasInserted = result[0].affectedRows === 1;
-   
+
     if (wasInserted) {
+      // send client if from front-end
       let io = req.app.get("io");
       await handleNotifications(io, {
         sender_id: client_id,
-        receiver_id: freelancer_id, // send client if from front-end
+        receiver_id: freelancer_id,
         title: "New Order",
         message: "New Order Has Been Placed",
         type: "freelancer",

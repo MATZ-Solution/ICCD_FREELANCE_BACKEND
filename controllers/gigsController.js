@@ -255,7 +255,6 @@ exports.getSingleGigs = async (req, res) => {
 exports.getGigsByUser = async (req, res) => {
   const { userId } = req.user;
   const { id } = req.params;
-  console.log("userId: ", userId);
   try {
     const getProjectQuery = `
     SELECT  g.*, GROUP_CONCAT(gf.fileUrl) AS gigsFiles
