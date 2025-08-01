@@ -159,7 +159,7 @@ exports.getSingleGigs = async (req, res) => {
       p.stationeryDesigns, p.vectorFile, p.sourceFile, p.socialMediaKit, p.printableFile,
       p.logoTransparency, p.deliveryTime, p.revisions, p.price,p.packageType,
 
-      f.id as freelancerId, f.fileUrl as freelancerPic, f.firstName, f.lastName, f.about_tagline, f.about_description,
+      f.id as freelancerId, f.userID as freelancerClientId, f.fileUrl as freelancerPic, f.firstName, f.lastName, f.about_tagline, f.about_description,
       GROUP_CONCAT(fl.language_name) as FreelancerLanguages
       
       FROM gigs g
@@ -187,6 +187,7 @@ exports.getSingleGigs = async (req, res) => {
       FreelancerLanguages,
       gigsID,
       freelancerId,
+      freelancerClientId
     } = selectResult[0][0];
 
     const filterData = selectResult[0].map((item) => ({
@@ -222,6 +223,7 @@ exports.getSingleGigs = async (req, res) => {
         FreelancerLanguages,
         FreelancerLanguages,
         freelancerPic: freelancerPic,
+        freelancerClientId
       },
       packagesDetails: filterData,
     };

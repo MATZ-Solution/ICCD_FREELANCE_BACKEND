@@ -45,19 +45,22 @@ exports.createOrder = async function (req, res) {
 };
 
 exports.getAllOrderByFreelancer = async (req, res) => {
-  const { freelancerID } = req.params;
+  const { freelancerID } = req.params;  // changed from freelancerID to id
   const { search } = req.query;
   try {
     let queryParam = [];
     let getOrderQuery = `
-         SELECT 
-        so.base_price, so.package_type, so.status,
-        g.id as gigsID, g.title AS gigsTitle, g.description AS gigsDescription,
-        GROUP_CONCAT(gf.fileUrl) AS gigsImage
+        SELECT 
+          so.id, 
+          so.created_at,
+          so.base_price, so.package_type, so.status,
+          g.id as gigsID, g.title AS gigsTitle, g.description AS gigsDescription,
+          GROUP_CONCAT(gf.fileUrl) AS gigsImage
         FROM stripeorders so
         JOIN gigs g ON g.id = so.gig_id
         JOIN gigsfiles gf ON gf.gigID = g.id
         WHERE so.freelancer_id = ?
+      
      `;
     queryParam.push(freelancerID);
     if (search) {
@@ -65,6 +68,8 @@ exports.getAllOrderByFreelancer = async (req, res) => {
       const searchTerm = `%${search}%`;
       queryParam.push(searchTerm);
     }
+
+    getOrderQuery += ` GROUP BY so.id ORDER BY so.id DESC `
 
     console.log("getOrderQuery: ", getOrderQuery);
     console.log("queryParam: ", queryParam);
@@ -96,30 +101,48 @@ exports.getAllOrderByFreelancer = async (req, res) => {
 
 exports.getSingleOrderByFreelancer = async (req, res) => {
   const { orderId } = req.params;
+
   try {
     const getOrderQuery = `
-        SELECT 
-        o.*,
-        g.id as gigsID, g.title AS gigsTitle, g.description AS gigsDescription,
-        p.*
+      SELECT 
+        so.id, 
+        so.session_id, 
+        so.email, 
+        so.amount,
+        so.created_at,
+        so.base_price, 
+        so.client_id, 
+        so.freelancer_id, 
+        so.gig_id, 
+        so.revisions, 
+        so.quantity, 
+        so.total_price, 
+        so.package_type, 
+        so.status,
+        g.id AS gigsID, 
+        g.title AS gigsTitle, 
+        g.description AS gigsDescription,
+        GROUP_CONCAT(gf.fileUrl) AS gigsImage
+      FROM stripeorders so
+      JOIN gigs g ON g.id = so.gig_id
+      LEFT JOIN gigsfiles gf ON gf.gigID = g.id
+      WHERE so.id = ?
+      GROUP BY so.id, g.id
+    `;
 
-        FROM orders o
-        JOIN gigs g ON g.id = o.gigID
-        JOIN packages p ON p.id = o.packageID
-        WHERE o.id = ?
-     `;
     const selectResult = await queryRunner(getOrderQuery, [orderId]);
 
     if (selectResult[0].length > 0) {
       res.status(200).json({
         statusCode: 200,
         message: "Success",
-        data: selectResult[0],
+        data: selectResult[0][0], // return the single order object
       });
     } else {
-      res.status(200).json({
-        data: [],
+      res.status(404).json({
+        statusCode: 404,
         message: "Order Not Found",
+        data: null,
       });
     }
   } catch (error) {
