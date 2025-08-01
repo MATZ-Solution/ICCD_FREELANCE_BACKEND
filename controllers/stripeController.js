@@ -18,9 +18,9 @@ exports.createCheckoutSession = async (req, res) => {
       payment_method_types: ["card"],
       line_items: orderDetails.map((item) => ({
         price_data: {
-          currency: "pkr",
+          currency: "USD",
           product_data: { name: item.name },
-          unit_amount: Math.round(parseFloat(item.price) ),
+          unit_amount: Math.round(parseFloat(item.price) * 10), 
         },
         quantity: item.quantity,
       })),
