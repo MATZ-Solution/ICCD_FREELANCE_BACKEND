@@ -23,8 +23,9 @@ exports.addProject = async function (req, res) {
   try {
 
     // Add project into database
+    const formattedDeadline = new Date(deadline).toISOString().slice(0, 19).replace('T', ' ');
     const insertProjectQuery = `INSERT INTO projects(title, budget,type, description, clientID, category, subCategory, deadline, duration, total_freelancer, freelancerType, overview, deliverable, mode) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?) `;
-    const values = [title, budget,type, description, userId, category, subCategory, deadline, duration, total_freelancer, freelancerType, overview, deliverable, mode]
+    const values = [title, budget,type, description, userId, category, subCategory, formattedDeadline, duration, total_freelancer, freelancerType, overview, deliverable, mode]
     const insertFileResult = await queryRunner(insertProjectQuery, values);
 
     const project_id = insertFileResult[0].insertId
