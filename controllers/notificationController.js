@@ -83,8 +83,6 @@ exports.getNotifications = async (req, res) => {
 exports.countUnReadMesg = async (req, res) => {
   const { userId } = req.user;
   const { id, type } = req.query;
-  console.log("userId: ", userId, "type: ", type);
-
   try {
     const result = await queryRunner(
       `SELECT COUNT(*) AS count FROM notifications WHERE  receiver_id = ? AND type = ? AND is_read = 0`,

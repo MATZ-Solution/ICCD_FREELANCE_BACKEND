@@ -3,7 +3,6 @@ const { deleteS3File } = require("../utils/deleteS3Files")
 
 exports.getClientDashboardData = async (req, res) => {
   const { userId } = req.user;
-  console.log("userId: ", userId)
   try {
     const getProjectQuery = `
     SELECT 

@@ -85,7 +85,6 @@ exports.addProject = async function (req, res) {
 
 exports.getProjectByClient = async (req, res) => {
   const { userId } = req.user;
-  console.log("userId: ", userId)
   try {
     const getProjectQuery = `
     SELECT  p.*, GROUP_CONCAT(pf.fileUrl) AS projectFiles, GROUP_CONCAT(ps.name) AS projectSkills,

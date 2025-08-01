@@ -4,7 +4,6 @@ const { queryRunner } = require("../helper/queryRunner");
 
 exports.checkIsFreelancer = async (req, res) => {
   const { userId } = req.user;
-  console.log("userId: ", userId);
   try {
     const getProjectQuery = `SELECT * FROM freelancers WHERE userID = ?`;
 
