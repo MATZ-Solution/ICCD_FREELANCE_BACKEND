@@ -189,8 +189,6 @@ exports.getAllOrders = async (req, res) => {
   }
 };
 
-
-
 exports.getAllOrderByFreelancer = async (req, res) => {
   const { freelancerId } = req.params;  // changed from freelancerID to id
   const { search } = req.query;
@@ -244,7 +242,6 @@ exports.getAllOrderByFreelancer = async (req, res) => {
     });
   }
 };
-
 
 exports.getSingleOrderByFreelancer = async (req, res) => {
   const { orderId } = req.params;
