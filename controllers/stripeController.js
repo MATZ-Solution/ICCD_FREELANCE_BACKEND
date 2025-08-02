@@ -20,7 +20,7 @@ exports.createCheckoutSession = async (req, res) => {
         price_data: {
           currency: "USD",
           product_data: { name: item.name },
-          unit_amount: Math.round(parseFloat(item.price) * 100),
+          unit_amount: Math.round(parseFloat(item.price) * 1),
         },
         quantity: item.quantity,
       })),
@@ -32,11 +32,12 @@ exports.createCheckoutSession = async (req, res) => {
       ...(customer_email
         ? { customer_email }
         : {
-          customer_creation: "always",
-          billing_address_collection: "required",
-        }),
+            customer_creation: "always",
+            billing_address_collection: "required",
+          }),
     });
 
+    console.log("session.url: ", session);
     res.json({ url: session.url });
   } catch (error) {
     console.error("Stripe session creation error:", error.message);
@@ -73,8 +74,7 @@ exports.getSession = async (req, res) => {
 
 // === Insert or Update Order ===
 exports.processOrder = async (req, res) => {
-
-  console.log("process order called!")
+  console.log("process order called!");
 
   if (!queryRunner) {
     return res.status(500).json({ error: "Database connection not available" });
@@ -92,75 +92,83 @@ exports.processOrder = async (req, res) => {
     totalPrice,
     packageType,
     revisions,
-    freelancer_client_id
+    freelancer_client_id,
+    session_id,
   } = req.body;
 
-  if (!id) {
+  if (!session_id) {
     return res.status(400).json({ error: "Session ID is required" });
   }
 
   try {
-    const query = `
-      INSERT INTO stripeorders 
-  (session_id, email, amount, status, created_at, client_id, freelancer_id, gig_id, quantity, base_price, total_price, package_type, revisions)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-ON DUPLICATE KEY UPDATE 
-  email = VALUES(email),
-  amount = VALUES(amount),
-  status = VALUES(status),
-  client_id = VALUES(client_id),
-  freelancer_id = VALUES(freelancer_id),
-  gig_id = VALUES(gig_id),
-  quantity = VALUES(quantity),
-  base_price = VALUES(base_price),
-  total_price = VALUES(total_price),
-  package_type = VALUES(package_type),
-  revisions = VALUES(revisions)
-    `;
+    const findSessID = `SELECT session_id from stripeorders WHERE session_id = ?`;
+    const result = await queryRunner(findSessID, [session_id]);
+    if (result[0].length === 0) {
+      const query = `
+        INSERT INTO stripeorders 
+        (session_id, email, amount, status, created_at, client_id, freelancer_id, gig_id, quantity, base_price, total_price, package_type, revisions)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE 
+        email = VALUES(email),
+        amount = VALUES(amount),
+        status = VALUES(status),
+        client_id = VALUES(client_id),
+        freelancer_id = VALUES(freelancer_id),
+        gig_id = VALUES(gig_id),
+        quantity = VALUES(quantity),
+        base_price = VALUES(base_price),
+        total_price = VALUES(total_price),
+        package_type = VALUES(package_type),
+        revisions = VALUES(revisions)
+      `;
 
-    const data = [
-      id,
-      customer_email || null,
-      amount_total || 0,
-      payment_status || "unknown",
-      new Date().toISOString().slice(0, 19).replace("T", " "),
-      client_id || null,
-      freelancer_id || null,
-      gig_id || null,
-      quantity || null,
-      basePrice || null,
-      totalPrice || null,
-      packageType || null,
-      revisions || null,
-    ];
+      const data = [
+        id,
+        customer_email || null,
+        amount_total || 0,
+        payment_status || "unknown",
+        new Date().toISOString().slice(0, 19).replace("T", " "),
+        client_id || null,
+        freelancer_id || null,
+        gig_id || null,
+        quantity || null,
+        basePrice || null,
+        totalPrice || null,
+        packageType || null,
+        revisions || null,
+      ];
 
-    const result = await queryRunner(query, data);
-    console.log("result: ", result)
-    const wasInserted = result[0].affectedRows === 1;
+      const result = await queryRunner(query, data);
+      const wasInserted = result[0].affectedRows === 1;
 
-    if (wasInserted) {
-      // send client if from front-end
-      let io = req.app.get("io");
-      await handleNotifications(io, {
-        sender_id: client_id,
-        receiver_id: freelancer_id,
-        title: "New Order",
-        message: "New Order Has Been Placed",
-        type: "freelancer",
+      if (wasInserted) {
+        // send client if from front-end
+        let io = req.app.get("io");
+        await handleNotifications(io, {
+          sender_id: client_id,
+          receiver_id: freelancer_id,
+          title: "New Order",
+          message: "New Order Has Been Placed",
+          type: "freelancer",
+        });
+
+        // insert Intro message into database
+        let messageQuery = ` INSERT INTO messages(senderId, receiverId, messages) VALUES(?, ?, ?)  `;
+        const result = await queryRunner(messageQuery, [
+          client_id,
+          freelancer_client_id,
+          "You are now communication each other",
+        ]);
+      }
+
+      res.status(wasInserted ? 201 : 200).json({
+        message: wasInserted
+          ? "Order saved successfully"
+          : "Order updated successfully",
+        sessionId: id,
+        isNew: wasInserted,
       });
-
-      // insert Intro message into database
-      let messageQuery = ` INSERT INTO messages(senderId, receiverId, messages) VALUES(?, ?, ?)  `
-      const result = await queryRunner(messageQuery, [client_id, freelancer_client_id, 'You can now communicate with each other']);
     }
-
-    res.status(wasInserted ? 201 : 200).json({
-      message: wasInserted
-        ? "Order saved successfully"
-        : "Order updated successfully",
-      sessionId: id,
-      isNew: wasInserted,
-    });
   } catch (error) {
     console.error("Error in /process-order:", error.message);
     res.status(500).json({
@@ -194,7 +202,7 @@ exports.getAllOrders = async (req, res) => {
 };
 
 exports.getAllOrderByFreelancer = async (req, res) => {
-  const { freelancerId } = req.params;  // changed from freelancerID to id
+  const { freelancerId } = req.params; // changed from freelancerID to id
   const { search } = req.query;
   try {
     let queryParam = [];
@@ -302,6 +310,3 @@ exports.getSingleOrderByFreelancer = async (req, res) => {
     });
   }
 };
-
-
-
