@@ -36,7 +36,7 @@
   },
   "name": "spade-api-2",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
     "swagger-autogen": "node swagger/swaggerDef.js",
     "start": "node swagger/swaggerDef.js && nodemon app.js",
