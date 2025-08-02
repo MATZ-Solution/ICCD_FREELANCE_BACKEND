@@ -1,4 +1,4 @@
-const mySql2 = require('mysql2/promise');
+const mySql2 = require("mysql2/promise");
 
 let pool;
 
@@ -12,20 +12,19 @@ const createPool = async () => {
     // password:"Windows!@#$567",
     // database:"matzsolu_freelancehr"
 
-     // ######## ------- local database connection ########
-    host: "localhost",
-    port:"3306",
-    user:"root",
-      password:"",
-      database:"matzsolu_iccd_freelance"
+    // ######## ------- local database connection ########
+    // host: "localhost",
+    // port:"3306",
+    // user:"root",
+    //   password:"",
+    //   database:"matzsolu_iccd_freelance"
 
     // ######## ------- live database connection ########
-  // host: "191.96.53.248",
-  // port:"3306",
-  // user:"matzsolu_powerhouse_new_user",
-  //   password:"$^+)MLZYc5S)uo",
-  //   database:"iccd_freelance"
-
+    host: "191.96.53.248",
+    port: "3306",
+    user: "matzsolu_powerhouse_new_user",
+    password: "$^+)MLZYc5S)uo",
+    database: "iccd_freelance",
   });
 
   return pool;
@@ -56,7 +55,6 @@ module.exports = { createPool, getConnectionFromPool };
 //   //   password:"",
 //   //   database:"freelancing"
 
-  
 //   host: "193.203.166.177",
 //     user:"u426733178_root",
 //     password:"Windows!@#$567",
