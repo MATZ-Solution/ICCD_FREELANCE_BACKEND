@@ -10,14 +10,16 @@ exports.addGigs = async function (req, res) {
     packages,
     freelancerId,
   } = req.body;
+  console.log("req body: ", req.body)
   try {
     // Add project into database
-    const insertGigsQuery = `INSERT INTO gigs(title, description, category, subCategory, freelancer_id) VALUES (?,?,?,?,?) `;
+    const insertGigsQuery = `INSERT INTO gigs(title, description, category, subCategory, packages, freelancer_id) VALUES (?,?,?,?,?,?) `;
     const queryParamsGigs = [
       gigsTitle,
       description,
       category,
       subCategory,
+      packages,
       freelancerId,
     ];
 
@@ -28,24 +30,24 @@ exports.addGigs = async function (req, res) {
     );
 
     // add packages in packages table
-    const gigId = insertGigsResult[0].insertId;
-    const parsedPackages = JSON.parse(packages);
-    const tableName = category.toLowerCase().replaceAll(" ", "_")
+    // const gigId = insertGigsResult[0].insertId;
+    // const parsedPackages = JSON.parse(packages);
+    // const tableName = category.toLowerCase().replaceAll(" ", "_")
 
-    for (const key of ["basic", "standard", "premium"]) {
-      const pkg = parsedPackages[key];
-      console.log("package: ", pkg)
-      if (!pkg) continue;
-      const column = Object.keys(pkg).join(',');
-      const queryParams = Object.values(pkg)
+    // for (const key of ["basic", "standard", "premium"]) {
+    //   const pkg = parsedPackages[key];
+    //   console.log("package: ", pkg)
+    //   if (!pkg) continue;
+    //   const column = Object.keys(pkg).join(',');
+    //   const queryParams = Object.values(pkg)
       
-      await queryRunner(
-        `
-        INSERT INTO ${tableName}_package (${column},gigID)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [...queryParams, gigId]
-      );
-    }
+    //   await queryRunner(
+    //     `
+    //     INSERT INTO ${tableName}_package (${column},gigID)
+    //    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    //     [...queryParams, gigId]
+    //   );
+    // }
 
     // add gig's file in gigsfiles table
     if (req.files.length > 0) {
@@ -128,7 +130,7 @@ exports.getSingleGigs = async (req, res) => {
   try {
     const getProjectQuery = `
       SELECT 
-      g.id as gigsID, g.title, g.description, g.category,g.subCategory, g.freelancer_id as freelancerID, GROUP_CONCAT(DISTINCT(gf.fileUrl)) as gigsFiles,
+      g.id as gigsID, g.title, g.packages, g.description, g.category,g.subCategory, g.freelancer_id as freelancerID, GROUP_CONCAT(DISTINCT(gf.fileUrl)) as gigsFiles,
 
       f.id as freelancerId, f.userID as freelancerClientId, f.fileUrl as freelancerPic, f.firstName, f.lastName, f.about_tagline, f.about_description,
       GROUP_CONCAT(DISTINCT fl.language_name) as FreelancerLanguages
@@ -147,6 +149,7 @@ exports.getSingleGigs = async (req, res) => {
       title,
       category,
       subCategory,
+      packages,
       description,
       gigsFiles,
       firstName,
@@ -175,13 +178,15 @@ exports.getSingleGigs = async (req, res) => {
     //   revisions: item.revisions,
     //   price: item.price,
     // }));
-
+     const packagesObj = JSON.parse(packages);
+    const packagesArray = Object.values(packagesObj);
     const obj = {
       gigsDescription: {
         gigsID: gigsID,
         gigsTitle: title,
         gigsCategory: category,
         gigsSubcategory: subCategory,
+        packages: packagesArray,
         gigsDescription: description,
         gigsFiles: gigsFiles,
       },
