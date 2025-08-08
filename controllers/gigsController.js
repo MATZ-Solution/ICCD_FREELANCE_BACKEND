@@ -30,45 +30,20 @@ exports.addGigs = async function (req, res) {
     // add packages in packages table
     const gigId = insertGigsResult[0].insertId;
     const parsedPackages = JSON.parse(packages);
+    const tableName = category.toLowerCase().replaceAll(" ", "_")
 
     for (const key of ["basic", "standard", "premium"]) {
       const pkg = parsedPackages[key];
+      console.log("package: ", pkg)
       if (!pkg) continue;
-      const {
-        packageType,
-        name,
-        description,
-        deliveryTime,
-        revisions,
-        stationeryDesigns,
-        vectorFile,
-        sourceFile,
-        socialMediaKit,
-        printableFile,
-        logoTransparency,
-        price,
-      } = pkg;
-      const queryParams = [
-        packageType,
-        name,
-        description,
-        deliveryTime,
-        revisions,
-        stationeryDesigns,
-        vectorFile,
-        sourceFile,
-        socialMediaKit,
-        printableFile,
-        logoTransparency,
-        price,
-        gigId,
-      ];
+      const column = Object.keys(pkg).join(',');
+      const queryParams = Object.values(pkg)
+      
       await queryRunner(
-        `INSERT INTO packages( packageType, name, description, deliveryTime, revisions, stationeryDesigns,
-        vectorFile, sourceFile, socialMediaKit, printableFile, logoTransparency, price,
-        gigID)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        queryParams
+        `
+        INSERT INTO ${tableName}_package (${column},gigID)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [...queryParams, gigId]
       );
     }
 
@@ -154,22 +129,17 @@ exports.getSingleGigs = async (req, res) => {
     const getProjectQuery = `
       SELECT 
       g.id as gigsID, g.title, g.description, g.category,g.subCategory, g.freelancer_id as freelancerID, GROUP_CONCAT(DISTINCT(gf.fileUrl)) as gigsFiles,
-      
-      p.name as packageName, p.description as packageDescription,
-      p.stationeryDesigns, p.vectorFile, p.sourceFile, p.socialMediaKit, p.printableFile,
-      p.logoTransparency, p.deliveryTime, p.revisions, p.price,p.packageType,
 
       f.id as freelancerId, f.userID as freelancerClientId, f.fileUrl as freelancerPic, f.firstName, f.lastName, f.about_tagline, f.about_description,
-      GROUP_CONCAT(fl.language_name) as FreelancerLanguages
+      GROUP_CONCAT(DISTINCT fl.language_name) as FreelancerLanguages
       
       FROM gigs g
 
-      JOIN gigsfiles gf ON gf.gigID = g.id
-      JOIN packages p ON p.gigID = g.id
-      JOIN freelancers f ON f.id = g.freelancer_id
-      JOIN freelancers_languages fl ON fl.freelancer_id = f.id
+      LEFT JOIN gigsfiles gf ON gf.gigID = g.id
+      LEFT JOIN freelancers f ON f.id = g.freelancer_id
+      LEFT JOIN freelancers_languages fl ON fl.freelancer_id = f.id
       WHERE g.id = ?
-      GROUP BY p.packageType
+      
       `;
     const selectResult = await queryRunner(getProjectQuery, [gigID]);
     console.log("selectResult: ", selectResult[0])
@@ -190,21 +160,21 @@ exports.getSingleGigs = async (req, res) => {
       freelancerClientId
     } = selectResult[0][0];
 
-    const filterData = selectResult[0].map((item) => ({
-      packageId: item.id,
-      packageType: item.packageType,
-      packageName: item.packageName,
-      packageDescription: item.packageDescription,
-      deliveryTime: item.deliveryTime,
-      stationeryDesigns: item.stationeryDesigns,
-      vectorFile: item.vectorFile,
-      sourceFile: item.sourceFile,
-      socialMediaKit: item.socialMediaKit,
-      printableFile: item.printableFile,
-      logoTransparency: item.logoTransparency,
-      revisions: item.revisions,
-      price: item.price,
-    }));
+    // const filterData = selectResult[0].map((item) => ({
+    //   packageId: item.id,
+    //   packageType: item.packageType,
+    //   packageName: item.packageName,
+    //   packageDescription: item.packageDescription,
+    //   deliveryTime: item.deliveryTime,
+    //   stationeryDesigns: item.stationeryDesigns,
+    //   vectorFile: item.vectorFile,
+    //   sourceFile: item.sourceFile,
+    //   socialMediaKit: item.socialMediaKit,
+    //   printableFile: item.printableFile,
+    //   logoTransparency: item.logoTransparency,
+    //   revisions: item.revisions,
+    //   price: item.price,
+    // }));
 
     const obj = {
       gigsDescription: {
@@ -225,7 +195,7 @@ exports.getSingleGigs = async (req, res) => {
         freelancerPic: freelancerPic,
         freelancerClientId
       },
-      packagesDetails: filterData,
+      // packagesDetails: filterData,
     };
 
     if (selectResult[0].length > 0) {
@@ -247,6 +217,38 @@ exports.getSingleGigs = async (req, res) => {
     return res.status(500).json({
       statusCode: 500,
       message: "Failed to get gigs",
+      error: error.message,
+    });
+  }
+};
+
+exports.getPackages = async (req, res) => {
+  const { id, category } = req.query;
+  const tableName = category.toLowerCase().replaceAll(" ", "_")
+  
+  try {
+    const getPackageQuery = `
+    SELECT * FROM ${tableName}_package WHERE gigID = ? `;
+    const selectResult = await queryRunner(getPackageQuery, [id]);
+
+    if (selectResult[0].length > 0) {
+      res.status(200).json({
+        statusCode: 200,
+        message: "Success",
+        data: selectResult[0]
+        // data: filterData,
+      });
+    } else {
+      res.status(200).json({
+        data: [],
+        message: "Package Not Found",
+      });
+    }
+  } catch (error) {
+    console.error("Query error: ", error);
+    return res.status(500).json({
+      statusCode: 500,
+      message: "Failed to get Package",
       error: error.message,
     });
   }

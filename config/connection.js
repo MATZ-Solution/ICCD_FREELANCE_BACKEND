@@ -13,19 +13,19 @@ const createPool = async () => {
     // database:"matzsolu_freelancehr"
 
     // ######## ------- local database connection ########
-    // host: "localhost",
-    // port:"3306",
-    // user:"root",
-    //   password:"",
-    //   database:"matzsolu_iccd_freelance"
+    host: "localhost",
+    port:"3306",
+    user:"root",
+      password:"",
+      database:"matzsolu_iccd_freelance"
 
     // ######## ------- live database connection ########
 
-    host: "93.127.192.89",
-    port: "3306",
-    user: "matzsolu_iccd_freelance_platform",
-    password: "$^+)MLZYc5S)uo",
-    database: "matzsolu_iccd_freelance_platform",
+    // host: "93.127.192.89",
+    // port: "3306",
+    // user: "matzsolu_iccd_freelance_platform",
+    // password: "$^+)MLZYc5S)uo",
+    // database: "matzsolu_iccd_freelance_platform",
 
   });
 

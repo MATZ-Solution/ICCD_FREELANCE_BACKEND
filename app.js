@@ -76,6 +76,6 @@ app.use("/notifications", notificationRoutes);
 app.use("/messages", messageRoutes);
 
 
-server.listen(2310,'0.0.0.0',() => {
-  console.log("Server is running on port 2310");
+server.listen(2300,() => {
+  console.log("Server is running on port 2300");
 });
