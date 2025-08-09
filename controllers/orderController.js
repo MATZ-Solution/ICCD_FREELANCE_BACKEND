@@ -239,3 +239,30 @@ exports.getSingleOrderByClient = async (req, res) => {
     });
   }
 };
+
+
+exports.getAllOrderByAdmin = async (req, res) => {
+  if (!queryRunner) {
+    return res.status(500).json({ error: "Database connection not available" });
+  }
+
+  try {
+    const query = `
+       SELECT so.* , g.title, (Select GROUP_CONCAT(gf.fileUrl) AS gigsImage from gigsfiles gf where gf.gigID = g.id) as gigsImage
+       FROM stripeorders so
+       LEFT JOIN gigs g ON g.id = so.gig_id
+       LEFT JOIN gigsfiles gf ON gf.gigID = g.id
+       GROUP BY so.id
+            `;
+
+    const result = await queryRunner(query);
+    console.log("result: ", result[0])
+    res.status(200).json({ orders: result[0] });
+  } catch (error) {
+    console.error("Error fetching orders:", error.message);
+    res.status(500).json({
+      error: "Failed to fetch orders",
+      details: error.message,
+    });
+  }
+};

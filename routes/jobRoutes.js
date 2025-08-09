@@ -6,7 +6,7 @@ const s3Upload = require('../middleware/s3Upload');
 
 //  s3Upload.array('files', 5)
 router.get("/getAllJob", jobController.getAllJob);
-router.get("/getJobById/:id" ,verifyToken, jobController.getJobById);
+router.get("/getJobById/:id", jobController.getJobById);
 router.get("/getJobsByClient" ,verifyToken, jobController.getJobByClient);
 router.get("/getJobPropsalByClient" ,verifyToken, jobController.getJobProposalsByClient);
 
