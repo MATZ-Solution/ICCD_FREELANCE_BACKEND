@@ -6,27 +6,20 @@ const createPool = async () => {
   if (pool) return pool;
 
   pool = await mySql2.createPool({
-    // connectionLimit: 10, // adjust according to your needs
-    // host: "153.92.7.247",
-    // user:"matzsolu_freelancehr_root",
-    // password:"Windows!@#$567",
-    // database:"matzsolu_freelancehr"
-
     // ######## ------- local database connection ########
     host: "localhost",
-    port:"3306",
-    user:"root",
-      password:"",
-      database:"matzsolu_iccd_freelance"
+    port: "3306",
+    user: "root",
+    password: "",
+    database: "matzsolu_iccd_freelance",
 
     // ######## ------- live database connection ########
-
+    // connectionLimit: 10,
     // host: "93.127.192.89",
     // port: "3306",
     // user: "matzsolu_iccd_freelance_platform",
     // password: "$^+)MLZYc5S)uo",
     // database: "matzsolu_iccd_freelance_platform",
-
   });
 
   return pool;
@@ -45,4 +38,3 @@ const getConnectionFromPool = async () => {
 };
 
 module.exports = { createPool, getConnectionFromPool };
-
