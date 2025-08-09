@@ -56,7 +56,7 @@ app.use((req, res, next) => {
 // app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerFile)); // This comes after app is initialized
 
 app.get("/", (req, res) => {
-  res.send("Hello World Power House Backend! 14-4-2025 again 78");
+  res.send("Hello World ICCD FREELANCE PLATFORM! 2-08-2025 again 1");
 });
 
 getConnectionFromPool();
@@ -76,6 +76,6 @@ app.use("/notifications", notificationRoutes);
 app.use("/messages", messageRoutes);
 
 
-server.listen(2300, () => {
+server.listen(2300,() => {
   console.log("Server is running on port 2300");
 });

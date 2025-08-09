@@ -10,16 +10,11 @@ exports.addGigs = async function (req, res) {
     packages,
     freelancerId,
   } = req.body;
+  console.log("req body: ", req.body)
   try {
     // Add project into database
     const insertGigsQuery = `INSERT INTO gigs(title, description, category, subCategory, freelancer_id) VALUES (?,?,?,?,?) `;
-    const queryParamsGigs = [
-      gigsTitle,
-      description,
-      category,
-      subCategory,
-      freelancerId,
-    ];
+    const queryParamsGigs = [gigsTitle, description, category, subCategory, freelancerId ];
 
     // add gigs in gigs table
     const insertGigsResult = await queryRunner(
@@ -34,41 +29,12 @@ exports.addGigs = async function (req, res) {
     for (const key of ["basic", "standard", "premium"]) {
       const pkg = parsedPackages[key];
       if (!pkg) continue;
-      const {
-        packageType,
-        name,
-        description,
-        deliveryTime,
-        revisions,
-        stationeryDesigns,
-        vectorFile,
-        sourceFile,
-        socialMediaKit,
-        printableFile,
-        logoTransparency,
-        price,
-      } = pkg;
-      const queryParams = [
-        packageType,
-        name,
-        description,
-        deliveryTime,
-        revisions,
-        stationeryDesigns,
-        vectorFile,
-        sourceFile,
-        socialMediaKit,
-        printableFile,
-        logoTransparency,
-        price,
-        gigId,
-      ];
+      const {packageType, name, description, delivery_time, revisions, price, ...rest} = pkg 
       await queryRunner(
-        `INSERT INTO packages( packageType, name, description, deliveryTime, revisions, stationeryDesigns,
-        vectorFile, sourceFile, socialMediaKit, printableFile, logoTransparency, price,
-        gigID)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        queryParams
+        `
+        INSERT INTO packages(packageType, name, description, deliveryTime, revisions, price, packages, gigID)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [packageType, name, description, delivery_time, revisions, price, JSON.stringify(rest) ,gigId]
       );
     }
 
@@ -154,29 +120,28 @@ exports.getSingleGigs = async (req, res) => {
     const getProjectQuery = `
       SELECT 
       g.id as gigsID, g.title, g.description, g.category,g.subCategory, g.freelancer_id as freelancerID, GROUP_CONCAT(DISTINCT(gf.fileUrl)) as gigsFiles,
-      
-      p.name as packageName, p.description as packageDescription,
-      p.stationeryDesigns, p.vectorFile, p.sourceFile, p.socialMediaKit, p.printableFile,
-      p.logoTransparency, p.deliveryTime, p.revisions, p.price,p.packageType,
+     
+       p.name as packageName, p.description as packageDescription, p.deliveryTime, p.revisions,
+        p.price,p.packageType, p.packages as gigPackages,
 
       f.id as freelancerId, f.userID as freelancerClientId, f.fileUrl as freelancerPic, f.firstName, f.lastName, f.about_tagline, f.about_description,
-      GROUP_CONCAT(fl.language_name) as FreelancerLanguages
+      GROUP_CONCAT(DISTINCT fl.language_name) as FreelancerLanguages
       
       FROM gigs g
 
-      JOIN gigsfiles gf ON gf.gigID = g.id
-      JOIN packages p ON p.gigID = g.id
-      JOIN freelancers f ON f.id = g.freelancer_id
-      JOIN freelancers_languages fl ON fl.freelancer_id = f.id
+      LEFT JOIN gigsfiles gf ON gf.gigID = g.id
+      LEFT JOIN freelancers f ON f.id = g.freelancer_id
+      LEFT JOIN packages p ON p.gigID = g.id
+      LEFT JOIN freelancers_languages fl ON fl.freelancer_id = f.id
       WHERE g.id = ?
       GROUP BY p.packageType
       `;
     const selectResult = await queryRunner(getProjectQuery, [gigID]);
-    console.log("selectResult: ", selectResult[0])
     const {
       title,
       category,
       subCategory,
+      packages,
       description,
       gigsFiles,
       firstName,
@@ -196,16 +161,11 @@ exports.getSingleGigs = async (req, res) => {
       packageName: item.packageName,
       packageDescription: item.packageDescription,
       deliveryTime: item.deliveryTime,
-      stationeryDesigns: item.stationeryDesigns,
-      vectorFile: item.vectorFile,
-      sourceFile: item.sourceFile,
-      socialMediaKit: item.socialMediaKit,
-      printableFile: item.printableFile,
-      logoTransparency: item.logoTransparency,
       revisions: item.revisions,
       price: item.price,
+      packages: item.gigPackages
     }));
-
+   
     const obj = {
       gigsDescription: {
         gigsID: gigsID,
@@ -247,6 +207,36 @@ exports.getSingleGigs = async (req, res) => {
     return res.status(500).json({
       statusCode: 500,
       message: "Failed to get gigs",
+      error: error.message,
+    });
+  }
+};
+
+exports.getPackages = async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    const getPackageQuery = `SELECT * FROM packages WHERE gigID = ? `;
+    const selectResult = await queryRunner(getPackageQuery, [id]);
+
+    if (selectResult[0].length > 0) {
+      res.status(200).json({
+        statusCode: 200,
+        message: "Success",
+        data: selectResult[0]
+        // data: filterData,
+      });
+    } else {
+      res.status(200).json({
+        data: [],
+        message: "Package Not Found",
+      });
+    }
+  } catch (error) {
+    console.error("Query error: ", error);
+    return res.status(500).json({
+      statusCode: 500,
+      message: "Failed to get Package",
       error: error.message,
     });
   }
@@ -401,7 +391,8 @@ exports.editGigsFiles = async function (req, res) {
 
 exports.editGigs = async function (req, res) {
   const { gigId } = req.params;
-  const { gigsTitle, category, subCategory, description, packages = '' } = req.body;
+  const { gigsTitle, category, subCategory, description, package = '' } = req.body;
+  console.log("req.body: ", req.body)
   try {
 
     if (gigsTitle && category && subCategory) {
@@ -422,56 +413,42 @@ exports.editGigs = async function (req, res) {
       ]);
     }
 
-    if (packages && packages?.premium) {
-      console.log("packages: ", packages)
       // const parsedPackages = JSON.parse(packages);
-      for (const key of ["basic", "standard", "premium"]) {
-        const pkg = packages[key];
-        if (!pkg) continue;
-        const {
-          packageType,
-          name,
-          description,
-          deliveryTime,
-          revisions,
-          stationeryDesigns,
-          vectorFile,
-          sourceFile,
-          socialMediaKit,
-          printableFile,
-          logoTransparency,
-          price,
-        } = pkg;
-        const queryParams = [
-          packageType,
-          name,
-          description,
-          deliveryTime,
-          revisions,
-          stationeryDesigns,
-          vectorFile,
-          sourceFile,
-          socialMediaKit,
-          printableFile,
-          logoTransparency,
-          price,
-          gigId,
-          packageType
-        ];
-        console.log("params: ", queryParams)
-        await queryRunner(
-          `UPDATE packages SET packageType = ?, name = ?, description = ?, deliveryTime = ?, 
-           revisions = ? , stationeryDesigns = ?, vectorFile = ?, sourceFile = ?, socialMediaKit = ?, 
-           printableFile = ?, logoTransparency = ?, price = ?
-           WHERE gigID = ? AND packageType = ?`,
-          queryParams
-        );
+      if(package){
+        for (const key of ["basic", "standard", "premium"]) {
+          const pkg = package[key];
+          if (!pkg) continue;
+          const {
+            packageType,
+            name,
+            description,
+            deliveryTime,
+            revisions,
+            price,
+            packages
+          } = pkg;
+          const queryParams = [
+            packageType,
+            name,
+            description,
+            deliveryTime,
+            revisions,
+            price,
+            packages,
+            gigId,
+            packageType
+          ];
+          await queryRunner(
+            `UPDATE packages SET packageType = ?, name = ?, description = ?, deliveryTime = ?, 
+             revisions = ?, price = ?, packages = ?
+             WHERE gigID = ? AND packageType = ?`,
+            queryParams
+          );
+        }
       }
-    }
 
     if (req.files && req.files?.length > 0) {
       for (const file of req.files) {
-        console.log("1")
         const insertFileResult = await queryRunner(
           `INSERT INTO gigsfiles(fileUrl, fileKey, gigID) VALUES (?, ?, ?)`,
           [file.location, file.key, gigId]

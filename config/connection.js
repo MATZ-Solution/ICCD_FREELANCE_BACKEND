@@ -1,4 +1,4 @@
-const mySql2 = require('mysql2/promise');
+const mySql2 = require("mysql2/promise");
 
 let pool;
 
@@ -6,26 +6,20 @@ const createPool = async () => {
   if (pool) return pool;
 
   pool = await mySql2.createPool({
-    // connectionLimit: 10, // adjust according to your needs
-    // host: "153.92.7.247",
-    // user:"matzsolu_freelancehr_root",
-    // password:"Windows!@#$567",
-    // database:"matzsolu_freelancehr"
-
-     // ######## ------- local database connection ########
+    // ######## ------- local database connection ########
     host: "localhost",
-    port:"3306",
-    user:"root",
-      password:"",
-      database:"matzsolu_iccd_freelance"
+    port: "3306",
+    user: "root",
+    password: "",
+    database: "matzsolu_iccd_freelance",
 
     // ######## ------- live database connection ########
-  // host: "191.96.53.248",
-  // port:"3306",
-  // user:"matzsolu_powerhouse_new_user",
-  //   password:"$^+)MLZYc5S)uo",
-  //   database:"iccd_freelance"
-
+    // connectionLimit: 10,
+    // host: "93.127.192.89",
+    // port: "3306",
+    // user: "matzsolu_iccd_freelance_platform",
+    // password: "$^+)MLZYc5S)uo",
+    // database: "matzsolu_iccd_freelance_platform",
   });
 
   return pool;
@@ -44,44 +38,3 @@ const getConnectionFromPool = async () => {
 };
 
 module.exports = { createPool, getConnectionFromPool };
-
-//   const mysql = require("mysql2/promise");
-// let connection;
-// const createConnection = async () => {
-//   if (connection) return connection;
-// connection = await mysql.createConnection({
-//   // host: "localhost",
-//   // port:"3306",
-//   // user:"root",
-//   //   password:"",
-//   //   database:"freelancing"
-
-  
-//   host: "193.203.166.177",
-//     user:"u426733178_root",
-//     password:"Windows!@#$567",
-//     database:"u426733178_freelancingdb"
-
-//     // host: "localhost",
-//     // port:"3306",
-//     // user:"root",
-//     // // password:"root",
-//     // password:"password",
-//     // database:"freelancing"
-
-//   });
-
-//   return connection;
-// };
-// const connect = async () => {
-//   try {
-//     const connection = await createConnection();
-//     if (connection) {
-//       console.log("Connected to Database");
-//     }
-//     // Use the connection object here
-//   } catch (err) {
-//     console.error("Error connecting to database:", err);
-//   }
-// };
-// module.exports = { createConnection, connect };

@@ -8,6 +8,8 @@ const s3Upload = require('../middleware/s3Upload');
 router.get('/getGigs', gigsController.getAllGigs)
 router.get('/getSingleGigs/:gigID', gigsController.getSingleGigs)
 router.get('/getGigsByUser/:id', verifyToken, gigsController.getGigsByUser)
+router.get('/getPackages/:id', verifyToken, gigsController.getPackages)
+
 
 router.get('/getGigsOverview/:gigID', verifyToken, gigsController.getGigsOverview)
 router.get('/getGigsFiles/:gigID', verifyToken, gigsController.getGigsFiles)
