@@ -22,7 +22,7 @@ exports.signUp = async function (req, res) {
       });
     }
     const hashPassword = await bcrypt.hash(password, 10);
-    const insertQuery = `INSERT INTO USERS( name, email, password) VALUES (?,?,?) `;
+    const insertQuery = `INSERT INTO users( name, email, password) VALUES (?,?,?) `;
     const insertResult = await queryRunner(insertQuery, [
       name,
       email,
