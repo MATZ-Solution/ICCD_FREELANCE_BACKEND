@@ -79,13 +79,13 @@ app.use("/messages", messageRoutes);
 
 
 // local connection
-// server.listen(2300,() => {
-//   console.log("Server is running on port 2300");
-// });
+server.listen(2300,() => {
+  console.log("Server is running on port 2300");
+});
 
 // live connection
-server.listen(22306,() => {
-  console.log("Server is running on port 22306");
-});
+// server.listen(22306,() => {
+//   console.log("Server is running on port 22306");
+// });
 
 
