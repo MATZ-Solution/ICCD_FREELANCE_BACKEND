@@ -281,6 +281,7 @@ exports.applyJob = async function (req, res) {
 
 exports.getJobProposalsByClient = async (req, res) => {
   const { userId } = req.user
+  const {id} = req.query
   try {
     const getJobQuery = `
     SELECT  jp.experience, jp.fileUrl,
@@ -288,9 +289,9 @@ exports.getJobProposalsByClient = async (req, res) => {
     f.fileUrl as candidateImg
     FROM job_proposals jp
     LEFT JOIN freelancers f ON f.id = jp.freelancerId
-    WHERE jp.clientId = ?
+    WHERE jp.clientId = ? AND jobId = ?
      `;
-    const selectResult = await queryRunner(getJobQuery, [userId]);
+    const selectResult = await queryRunner(getJobQuery, [userId, id]);
 
     if (selectResult[0].length > 0) {
       res.status(200).json({
