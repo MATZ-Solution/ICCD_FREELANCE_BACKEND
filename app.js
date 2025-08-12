@@ -78,6 +78,14 @@ app.use("/notifications", notificationRoutes);
 app.use("/messages", messageRoutes);
 
 
-server.listen(2300,() => {
-  console.log("Server is running on port 2300");
+// local connection
+// server.listen(2300,() => {
+//   console.log("Server is running on port 2300");
+// });
+
+// live connection
+server.listen(22306,() => {
+  console.log("Server is running on port 22306");
 });
+
+
