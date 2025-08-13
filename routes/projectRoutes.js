@@ -5,7 +5,7 @@ const { verifyToken } = require("../middleware/authenticate");
 const s3Upload = require('../middleware/s3Upload');
 
 router.get("/getAllProject" , projectController.getAllProject);
-router.get("/getProjectByClient" ,verifyToken, projectController.getProjectByClient);
+router.get("/getProjectByClient" , verifyToken, projectController.getProjectByClient);
 router.get("/getProjectById/:projectId" , projectController.getProjectById);
 router.get("/getProjectPropsalByClient/:projectId" ,verifyToken, projectController.getProjectProposalsByClient);
 

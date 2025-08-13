@@ -25,7 +25,7 @@ exports.addProject = async function (req, res) {
     // Add project into database
     const formattedDeadline = new Date(deadline).toISOString().slice(0, 19).replace('T', ' ');
     const insertProjectQuery = `INSERT INTO projects(title, budget,type, description, clientID, category, subCategory, deadline, duration, total_freelancer, freelancerType, overview, deliverable, mode) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?) `;
-    const values = [title, budget,type, description, userId, category, subCategory, formattedDeadline, duration, total_freelancer, freelancerType, overview, deliverable, mode]
+    const values = [title, budget, type, description, userId, category, subCategory, formattedDeadline, duration, total_freelancer, freelancerType, overview, deliverable, mode]
     const insertFileResult = await queryRunner(insertProjectQuery, values);
 
     const project_id = insertFileResult[0].insertId
@@ -39,7 +39,7 @@ exports.addProject = async function (req, res) {
       }
     }
 
-     if (language && language.length > 0) {
+    if (language && language.length > 0) {
       for (const i of language) {
         const insertProjectQuery = `INSERT INTO project_language( name, project_id) VALUES (?,?) `;
         const queryParams = [i, project_id]
@@ -84,9 +84,10 @@ exports.addProject = async function (req, res) {
 };
 
 exports.getProjectByClient = async (req, res) => {
+  const { search } = req.query
   const { userId } = req.user;
   try {
-    const getProjectQuery = `
+    let getProjectQuery = `
     SELECT  p.*, GROUP_CONCAT(pf.fileUrl) AS projectFiles, GROUP_CONCAT(ps.name) AS projectSkills,
     COUNT(DISTINCT pp.id) AS totalProposals
     FROM projects p 
@@ -94,8 +95,13 @@ exports.getProjectByClient = async (req, res) => {
     LEFT JOIN project_skills ps ON ps.project_id = p.id
     LEFT JOIN project_proposals pp ON pp.projectId = p.id
     WHERE p.clientID = ?
-    GROUP BY p.id
     `;
+
+    if (search) {
+      getProjectQuery += ` AND ( p.title LIKE '%${search}%' OR p.description LIKE '%${search}%' OR p.category LIKE '%${search}%' OR p.subCategory LIKE '%${search}%' )`;
+    }
+
+    getProjectQuery += ` GROUP BY p.id `;
 
     const selectResult = await queryRunner(getProjectQuery, [userId]);
 
@@ -129,14 +135,16 @@ exports.getProjectByClient = async (req, res) => {
 };
 
 exports.getAllProject = async (req, res) => {
+  const { search } = req.query
   try {
-    const getProjectQuery = `
+    let getProjectQuery = `
     SELECT  p.*, GROUP_CONCAT(pf.fileUrl) AS projectFiles, GROUP_CONCAT(ps.name) AS projectSkills
     FROM projects p 
     LEFT JOIN projectfiles pf ON pf.projectID = p.id
     LEFT JOIN project_skills ps ON ps.project_id = p.id
-    GROUP BY p.id
     `;
+
+    c
 
     const selectResult = await queryRunner(getProjectQuery);
 
@@ -156,21 +164,21 @@ exports.getAllProject = async (req, res) => {
     } else {
       res.status(200).json({
         data: [],
-        message: "Gigs Not Found",
+        message: "Project Not Found",
       });
     }
   } catch (error) {
     console.error("Query error: ", error);
     return res.status(500).json({
       statusCode: 500,
-      message: "Failed to get gigs",
+      message: "Failed to get projects",
       error: error.message,
     });
   }
 };
 
 exports.getProjectById = async (req, res) => {
-   const { projectId } = req.params;
+  const { projectId } = req.params;
   try {
     const getProjectQuery = `
     SELECT  p.*, GROUP_CONCAT(DISTINCT ps.name) AS skills, GROUP_CONCAT(DISTINCT pl.name) AS languages,
@@ -206,9 +214,9 @@ exports.getProjectById = async (req, res) => {
 };
 
 exports.getProjectProposalsByClient = async (req, res) => {
-   const { projectId } = req.params;
-   console.log("projectId: ", projectId)
-   const { userId } = req.user
+  const { projectId } = req.params;
+  console.log("projectId: ", projectId)
+  const { userId } = req.user
   try {
     const getProjectQuery = `
     SELECT  pp.*,
@@ -243,7 +251,7 @@ exports.getProjectProposalsByClient = async (req, res) => {
 };
 
 exports.applyProject = async function (req, res) {
-  const { name, experience, clientId, projectId, freelancerId} = req.body;
+  const { name, experience, clientId, projectId, freelancerId } = req.body;
   const files = req.files
 
   try {
@@ -253,7 +261,7 @@ exports.applyProject = async function (req, res) {
     console.log("values: ", values)
     const insertFileResult = await queryRunner(insertProposalsQuery, values);
 
-     if (insertFileResult[0].affectedRows > 0) {
+    if (insertFileResult[0].affectedRows > 0) {
       return res.status(200).json({
         statusCode: 200,
         message: "Proposal submitted successfully",
