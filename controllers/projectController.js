@@ -143,9 +143,6 @@ exports.getAllProject = async (req, res) => {
     LEFT JOIN projectfiles pf ON pf.projectID = p.id
     LEFT JOIN project_skills ps ON ps.project_id = p.id
     `;
-
-    c
-
     const selectResult = await queryRunner(getProjectQuery);
 
     const filterData = selectResult[0].map((item) => ({
