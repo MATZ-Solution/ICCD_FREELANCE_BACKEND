@@ -136,13 +136,13 @@ exports.getProjectByClient = async (req, res) => {
 
 exports.getAllProject = async (req, res) => {
   const { search } = req.query
+  console.log("search123: ", search)
   try {
-    let getProjectQuery = `
-    SELECT  p.*, GROUP_CONCAT(pf.fileUrl) AS projectFiles, GROUP_CONCAT(ps.name) AS projectSkills
-    FROM projects p 
-    LEFT JOIN projectfiles pf ON pf.projectID = p.id
-    LEFT JOIN project_skills ps ON ps.project_id = p.id
-    `;
+    let getProjectQuery = `SELECT * FROM projects `;
+    if (search) {
+      getProjectQuery += ` WHERE title LIKE '%${search}%' OR description LIKE '%${search}%' OR category LIKE '%${search}%' OR subCategory LIKE '%${search}%' `;
+    }
+
     const selectResult = await queryRunner(getProjectQuery);
 
     const filterData = selectResult[0].map((item) => ({
