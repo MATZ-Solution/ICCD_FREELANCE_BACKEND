@@ -208,13 +208,18 @@ exports.getJobById = async (req, res) => {
 };
 
 exports.getJobByClient = async (req, res) => {
+  let { search } = req.query
   const { userId } = req.user;
   try {
-    const getJobQuery = `
+    let getJobQuery = `
        SELECT  j.*, u.name FROM jobs j
        LEFT JOIN users u ON u.id = j.clientID
        WHERE u.id = ?
     `;
+
+    if (search) {
+      getJobQuery += ` AND ( j.jobTitle LIKE '%${search}%' )`;
+    }
     const selectResult = await queryRunner(getJobQuery, [userId]);
 
     if (selectResult[0].length > 0) {
@@ -281,7 +286,7 @@ exports.applyJob = async function (req, res) {
 
 exports.getJobProposalsByClient = async (req, res) => {
   const { userId } = req.user
-  const {id} = req.query
+  const { id } = req.query
   try {
     const getJobQuery = `
     SELECT  jp.experience, jp.fileUrl,
