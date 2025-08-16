@@ -177,7 +177,7 @@ exports.getSingleGigs = async (req, res) => {
       },
       freelancerDetails: {
         freelancerId: freelancerId,
-        freelancerName: firstName + lastName,
+        freelancerName: firstName + " " + lastName,
         about_tagline: about_tagline,
         freelancer_about_description: about_description,
         FreelancerLanguages,
