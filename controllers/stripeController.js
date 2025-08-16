@@ -157,7 +157,7 @@ exports.processOrder = async (req, res) => {
         const result = await queryRunner(messageQuery, [
           client_id,
           freelancer_client_id,
-          "You are now communication each other",
+          "You can now communicate with each other",
         ]);
       }
 
