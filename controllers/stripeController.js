@@ -26,9 +26,9 @@ exports.createCheckoutSession = async (req, res) => {
       })),
       mode: "payment",
       success_url:
-        "https://iccd.freelanceserver.matzsolutions.com/success?session_id={CHECKOUT_SESSION_ID}",
+        "https://iccd.freelance.matzsolutions.com/success?session_id={CHECKOUT_SESSION_ID}",
         
-      cancel_url: "https://iccd.freelanceserver.matzsolutions.com/cancel",
+      cancel_url: "https://iccd.freelance.matzsolutions.com/cancel",
       ...(customer_email
         ? { customer_email }
         : {
