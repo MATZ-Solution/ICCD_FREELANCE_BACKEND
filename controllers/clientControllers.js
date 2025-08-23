@@ -7,7 +7,7 @@ exports.getClientDashboardData = async (req, res) => {
     const getProjectQuery = `
     SELECT 
       (SELECT COUNT(*) FROM projects WHERE clientID = ? ) AS totalPostedProject,
-      (SELECT COUNT(*) FROM orders WHERE clientID = ? ) AS totalOrder,
+      (SELECT COUNT(*) FROM stripeorders WHERE client_id = ? ) AS totalOrder,
       (SELECT COUNT(*) FROM jobs WHERE clientID = ? ) AS totalPostedJob
     `;
 

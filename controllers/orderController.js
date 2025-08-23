@@ -161,26 +161,25 @@ exports.getAllOrderByClient = async (req, res) => {
   try {
     let queryParam = [];
     let getOrderQuery = `
-        SELECT 
-        so.base_price, so.package_type, so.status,
-        g.id as gigsID, g.title AS gigsTitle, g.description AS gigsDescription,
-        GROUP_CONCAT(gf.fileUrl) AS gigsImage
-        
+        SELECT so.*, g.*, (SELECT GROUP_CONCAT(gf.fileUrl)  FROM gigsfiles gf WHERE gf.gigID = so.gig_id ) as gigsImage
         FROM stripeorders so
         LEFT JOIN gigs g ON g.id = so.gig_id
-        LEFT JOIN gigsfiles gf ON gf.gigID = g.id
         WHERE so.client_id = ?
+
      `;
     queryParam.push(clientID);
-    if (search) {
-      getOrderQuery += ` AND (g.title LIKE ? OR g.description LIKE ?)`;
-      const searchTerm = `%${search}%`;
-      queryParam.push(searchTerm, searchTerm);
-    }
+    // if (search) {
+    //   getOrderQuery += ` AND (g.title LIKE ? OR g.description LIKE ?)`;
+    //   const searchTerm = `%${search}%`;
+    //   queryParam.push(searchTerm, searchTerm);
+    // }
 
     const selectResult = await queryRunner(getOrderQuery, queryParam);
     const validResult = selectResult[0].filter((item) => item.gigsID !== null);
     if (validResult.length > 0) {
+
+      console.log("validResult: ", validResult)
+
       res.status(200).json({
         statusCode: 200,
         message: "Success",
