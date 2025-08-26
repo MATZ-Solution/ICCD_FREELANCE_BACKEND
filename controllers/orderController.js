@@ -71,9 +71,6 @@ exports.getAllOrderByFreelancer = async (req, res) => {
 
     getOrderQuery += ` GROUP BY so.id ORDER BY so.id DESC `
 
-    console.log("getOrderQuery: ", getOrderQuery);
-    console.log("queryParam: ", queryParam);
-
     const selectResult = await queryRunner(getOrderQuery, queryParam);
     const validResult = selectResult[0].filter((item) => item.gigsID !== null);
 

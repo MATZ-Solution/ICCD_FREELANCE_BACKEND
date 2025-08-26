@@ -63,8 +63,10 @@ exports.signIn = async function (req, res) {
     }
 
     const checkPass = await bcrypt.compare(password, findUser[0][0].password);
-    if (!checkPass)
+    if (!checkPass) {
       return res.status(401).json({ message: "Invalid email or password" });
+    }
+
     const token = jwt.sign(
       { userId: findUser[0][0]?.id, email: findUser[0][0]?.email },
       "1dikjsaciwndvc",
@@ -72,6 +74,11 @@ exports.signIn = async function (req, res) {
         expiresIn: "7d",
       }
     );
+
+    const queryFreelancer = ` SELECT * FROM  freelancers WHERE userId = ? `;
+    const findfreelancer = await queryRunner(queryFreelancer, [findUser[0][0].id]);
+
+    console.log("findfreelancer: ", findfreelancer[0])
 
     res.status(200).json({
       token: token,
@@ -83,6 +90,7 @@ exports.signIn = async function (req, res) {
         userImg: findUser[0][0].userImg,
         about: findUser[0][0].about,
       },
+      freelancer: findfreelancer[0][0]
     });
   } catch (error) {
     console.log("error", error);
