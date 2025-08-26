@@ -49,8 +49,8 @@ exports.addDispute = async function (req, res) {
       }
       let io = req.app.get("io");
       await handleNotifications(io, {
-        sender_id: client_id,
-        receiver_id: freelancer_id,
+        sender_id: userType === 'client' ? client_id: freelancer_id,
+        receiver_id: userType !== 'client' ? client_id: freelancer_id,
         title: "Dispute",
         message: `${userType} raise a dispute. `,
         type: `${userType}`,

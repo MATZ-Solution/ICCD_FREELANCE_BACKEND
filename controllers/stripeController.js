@@ -26,9 +26,9 @@ exports.createCheckoutSession = async (req, res) => {
       })),
       mode: "payment",
       success_url:
-        "http://localhost:5173/success?session_id={CHECKOUT_SESSION_ID}",
+        "https://iccd.freelance.matzsolutions.com/success?session_id={CHECKOUT_SESSION_ID}",
         
-      cancel_url: "http://localhost:5173/cancel",
+      cancel_url: "https://iccd.freelance.matzsolutions.com/cancel",
       ...(customer_email
         ? { customer_email }
         : {
@@ -157,7 +157,7 @@ exports.processOrder = async (req, res) => {
         const result = await queryRunner(messageQuery, [
           client_id,
           freelancer_client_id,
-          "You are now communication each other",
+          "You can now communicate with each other",
         ]);
       }
 

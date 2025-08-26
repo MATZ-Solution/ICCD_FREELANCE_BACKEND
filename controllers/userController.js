@@ -145,7 +145,7 @@ exports.sendOtp = async function (req, res) {
     // IF USER EXISTS THEN ADD OTP IN DATABASE AND SEND EMAIL
     if (findUser[0].length > 0) {
       // INSERT OTP IN DATABASE
-      const insertQuery = `UPDATE USERS SET otp = ? WHERE email = ? `;
+      const insertQuery = `UPDATE users SET otp = ? WHERE email = ? `;
       const insertResult = await queryRunner(insertQuery, [pin, email]);
 
       if (insertResult[0].affectedRows > 0) {
