@@ -15,8 +15,8 @@ exports.addDispute = async function (req, res) {
             if (req.files.length > 0) {
                 for (const file of req.files) {
                     const insertFileResult = await queryRunner(
-                        `INSERT INTO disputefiles(fileUrl, fileKey, disputeId, userType, userId ) VALUES (?, ?, ?, ?, ?)`,
-                        [file.location, file.key, insertResult[0].insertId, raised_by, user_id]
+                        `INSERT INTO disputefiles(fileUrl, fileKey, disputeId, userType ) VALUES (?, ?, ?, ?)`,
+                        [file.location, file.key, insertResult[0].insertId, raised_by]
                     );
                     if (insertFileResult.affectedRows <= 0) {
                         return res.status(500).json({
@@ -92,7 +92,7 @@ exports.getAllDisputeByFreelancer = async (req, res) => {
     const { userId } = req.params;
     try {
         const getDisputeQueryClient = `
-    SELECT d.*, f.firstName, f.lastName
+    SELECT d.*, CONCAT(f.firstName, f.lastName) as name
     FROM dispute d
     JOIN freelancers f ON f.id = d.freelancerId
     WHERE d.freelancerId = ? 
