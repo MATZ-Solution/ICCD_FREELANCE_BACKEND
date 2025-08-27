@@ -158,7 +158,10 @@ exports.getAllOrderByClient = async (req, res) => {
   try {
     let queryParam = [];
     let getOrderQuery = `
-        SELECT so.*, g.*, (SELECT GROUP_CONCAT(gf.fileUrl)  FROM gigsfiles gf WHERE gf.gigID = so.gig_id ) as gigsImage
+        SELECT so.id as orderId, so.session_id, so.amount, so.status, so.gig_id, so.base_price,
+        so.total_price, so.package_type, so.revisions, so.client_id,
+        g.*, 
+        (SELECT GROUP_CONCAT(gf.fileUrl)  FROM gigsfiles gf WHERE gf.gigID = so.gig_id ) as gigsImage
         FROM stripeorders so
         LEFT JOIN gigs g ON g.id = so.gig_id
         WHERE so.client_id = ?
