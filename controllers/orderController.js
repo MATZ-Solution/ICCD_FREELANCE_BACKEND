@@ -247,16 +247,29 @@ exports.getAllOrderByAdmin = async (req, res) => {
   }
 
   try {
-    const query = `
-       SELECT so.* , g.title, (Select GROUP_CONCAT(gf.fileUrl) AS gigsImage from gigsfiles gf where gf.gigID = g.id) as gigsImage
-       FROM stripeorders so
-       LEFT JOIN gigs g ON g.id = so.gig_id
-       LEFT JOIN gigsfiles gf ON gf.gigID = g.id
-       GROUP BY so.id
-            `;
+    const { search } = req.query;
 
-    const result = await queryRunner(query);
-    console.log("result: ", result[0])
+    let query = `
+      SELECT so.*, g.title, 
+      (SELECT GROUP_CONCAT(gf.fileUrl) AS gigsImage 
+       FROM gigsfiles gf 
+       WHERE gf.gigID = g.id) as gigsImage
+      FROM stripeorders so
+      LEFT JOIN gigs g ON g.id = so.gig_id
+      LEFT JOIN gigsfiles gf ON gf.gigID = g.id
+    `;
+
+    if (search) {
+      query += `
+        WHERE g.title LIKE ? OR so.package_type LIKE ? OR so.status LIKE ?
+      `;
+    }
+
+    query += ` GROUP BY so.id`;
+
+    const params = search ? [`%${search}%`, `%${search}%`, `%${search}%`] : [];
+    const result = await queryRunner(query, params);
+
     res.status(200).json({ orders: result[0] });
   } catch (error) {
     console.error("Error fetching orders:", error.message);
