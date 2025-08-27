@@ -37,7 +37,6 @@ exports.createCheckoutSession = async (req, res) => {
           }),
     });
 
-    console.log("session.url: ", session);
     res.json({ url: session.url });
   } catch (error) {
     console.error("Stripe session creation error:", error.message);
@@ -74,8 +73,6 @@ exports.getSession = async (req, res) => {
 
 // === Insert or Update Order ===
 exports.processOrder = async (req, res) => {
-  console.log("process order called!");
-
   if (!queryRunner) {
     return res.status(500).json({ error: "Database connection not available" });
   }

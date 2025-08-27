@@ -136,7 +136,6 @@ exports.getProjectByClient = async (req, res) => {
 
 exports.getAllProject = async (req, res) => {
   const { search } = req.query
-  console.log("search123: ", search)
   try {
     let getProjectQuery = `SELECT * FROM projects `;
     if (search) {
@@ -234,7 +233,6 @@ exports.getProjectById = async (req, res) => {
 
 exports.getProjectProposalsByClient = async (req, res) => {
   const { projectId } = req.params;
-  console.log("projectId: ", projectId)
   const { userId } = req.user
   try {
     const getProjectQuery = `
@@ -277,7 +275,6 @@ exports.applyProject = async function (req, res) {
     // Add project_proposals into database
     const insertProposalsQuery = `INSERT INTO project_proposals(name, experience, projectId, clientId, freelancerId, fileUrl, fileKey) VALUES (?,?,?,?,?,?,?) `;
     const values = [name, experience, projectId, clientId, freelancerId, files[0].location, files[0].key]
-    console.log("values: ", values)
     const insertFileResult = await queryRunner(insertProposalsQuery, values);
 
     if (insertFileResult[0].affectedRows > 0) {

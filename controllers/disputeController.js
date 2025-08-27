@@ -3,7 +3,6 @@ const handleNotifications = require("../utils/sendnotification");
 
 exports.addDispute = async function (req, res) {
     const { subject, reason, raised_by, orderId, client_id, freelancer_id, user_id } = req.body;
-    console.log("req body: ", req.body)
     try {
 
         const insertDisputeQuery = `INSERT INTO dispute(subject, reason, raised_by, clientId, freelancerId, orderId, status) VALUES (?,?,?,?,?,?,?) `;
@@ -32,7 +31,7 @@ exports.addDispute = async function (req, res) {
                 receiver_id: raised_by !== 'client' ? client_id : freelancer_id,
                 title: "Dispute",
                 message: `${raised_by} raise a dispute. `,
-                type: `${raised_by}`,
+                type: `${raised_by === 'client' ? 'freelancer' : 'client'}`,
             });
             return res.status(200).json({
                 statusCode: 200,

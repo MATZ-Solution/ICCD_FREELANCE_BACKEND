@@ -10,7 +10,6 @@ exports.addGigs = async function (req, res) {
     packages,
     freelancerId,
   } = req.body;
-  console.log("req body: ", req.body)
   try {
     // Add project into database
     const insertGigsQuery = `INSERT INTO gigs(title, description, category, subCategory, freelancer_id) VALUES (?,?,?,?,?) `;
@@ -69,7 +68,6 @@ exports.addGigs = async function (req, res) {
 
 exports.getAllGigs = async (req, res) => {
   const { search } = req.query;
-  console.log("search: ", search);
   let queryParams = [];
   try {
     let getProjectQuery = `
@@ -346,7 +344,6 @@ exports.getGigsFiles = async (req, res) => {
 exports.editGigsFiles = async function (req, res) {
   const { gigId } = req.params;
   const { delFilesKey } = req.body;
-  console.log("gigs files: ", req.files)
   try {
     if (delFilesKey && JSON.parse(delFilesKey).length > 0) {
       for (const fileKey of JSON.parse(delFilesKey)) {
@@ -360,7 +357,6 @@ exports.editGigsFiles = async function (req, res) {
     if (req.files && req.files?.length > 0) {
       for (const file of req.files) {
         // await deleteS3File(fileKey);
-        console.log("1")
         const insertFileResult = await queryRunner(
           `INSERT INTO gigsfiles(fileUrl, fileKey, gigID) VALUES (?, ?, ?)`,
           [file.location, file.key, gigId]
@@ -392,7 +388,6 @@ exports.editGigsFiles = async function (req, res) {
 exports.editGigs = async function (req, res) {
   const { gigId } = req.params;
   const { gigsTitle, category, subCategory, description, package = '' } = req.body;
-  console.log("req.body: ", req.body)
   try {
 
     if (gigsTitle && category && subCategory) {

@@ -38,7 +38,6 @@ exports.getClientDashboardData = async (req, res) => {
 exports.clientEditProfile = async function (req, res) {
   const { userId } = req.user;
   const { name, about, filekey } = req.body;
-  console.log("req.body: ", req.body)
   try {
 
     let fields = [];

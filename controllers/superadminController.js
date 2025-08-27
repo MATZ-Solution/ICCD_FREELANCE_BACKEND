@@ -6,8 +6,6 @@ exports.getAllUsers = async function (req, res) {
     const sql = "SELECT * FROM users";
     const [rows] = await queryRunner(sql);
 
-    console.log("Fetched users:", rows); // rows is the actual data
-
     res.status(200).json({
       success: true,
       count: rows.length,

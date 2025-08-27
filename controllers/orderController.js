@@ -177,9 +177,6 @@ exports.getAllOrderByClient = async (req, res) => {
     const selectResult = await queryRunner(getOrderQuery, queryParam);
     const validResult = selectResult[0].filter((item) => item.gigsID !== null);
     if (validResult.length > 0) {
-
-      console.log("validResult: ", validResult)
-
       res.status(200).json({
         statusCode: 200,
         message: "Success",
