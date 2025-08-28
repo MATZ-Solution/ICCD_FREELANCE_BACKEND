@@ -13,8 +13,6 @@ exports.signUp = async function (req, res) {
       email,
     ]);
 
-    console.log("selectResult: ", selectResult[0]);
-
     if (selectResult[0].length > 0) {
       return res.status(404).json({
         statusCode: 200,
@@ -53,7 +51,6 @@ exports.signUp = async function (req, res) {
 // // ###################### SignIn user start #######################################
 exports.signIn = async function (req, res) {
   const { email, password } = req.body;
-  console.log("password: ", req.body)
   try {
     const query = ` SELECT id, name, email, fileUrl as userImg, about, password FROM users where email = ? `;
     const findUser = await queryRunner(query, [email]);
@@ -63,8 +60,10 @@ exports.signIn = async function (req, res) {
     }
 
     const checkPass = await bcrypt.compare(password, findUser[0][0].password);
-    if (!checkPass)
+    if (!checkPass) {
       return res.status(401).json({ message: "Invalid email or password" });
+    }
+
     const token = jwt.sign(
       { userId: findUser[0][0]?.id, email: findUser[0][0]?.email },
       "1dikjsaciwndvc",
@@ -73,6 +72,8 @@ exports.signIn = async function (req, res) {
       }
     );
 
+    const queryFreelancer = ` SELECT * FROM  freelancers WHERE userId = ? `;
+    const findfreelancer = await queryRunner(queryFreelancer, [findUser[0][0].id]);
     res.status(200).json({
       token: token,
       message: "LogIn successfull",
@@ -83,6 +84,7 @@ exports.signIn = async function (req, res) {
         userImg: findUser[0][0].userImg,
         about: findUser[0][0].about,
       },
+      freelancer: findfreelancer[0][0]
     });
   } catch (error) {
     console.log("error", error);
@@ -123,12 +125,8 @@ exports.passwordReset = async function (req, res) {
 
 exports.sendOtp = async function (req, res) {
   const { email } = req.body;
-  console.log("email: ", email);
-  // const date = new Date()
-  // console.log("date: ", date)
   try {
     const pin = Math.floor(1000 + Math.random() * 9000);
-    console.log(pin);
 
     // FIND USER IF EXIST OR NOT
     const findUserQuery = `SELECT email from users WHERE email = ? `;
@@ -233,8 +231,6 @@ exports.changePasword = async function (req, res) {
 
 exports.addFreelancerDetails = async function (req, res) {
   const { name, gigs } = req.body;
-  console.log("req.body: ", req.body);
-  console.log("files: ", req.files);
   try {
     if (req.files.length > 0) {
       for (const file of req.files) {

@@ -187,8 +187,6 @@ exports.addProfile = async function (req, res) {
     skills,
   } = req.body;
 
-  console.log("education: ", education);
-
   try {
     let languagesArray;
     if (languages && languages.length > 0) {
@@ -241,8 +239,6 @@ exports.addProfile = async function (req, res) {
         .map((item) => item)
         .join(",")}) VALUES (${fields.map((item) => "?").join(",")})`;
 
-        console.log("insertProjectQuery: ", insertProjectQuery)
-
       const insertFileResult = await queryRunner(insertProjectQuery, fields);
       freelancerResult = insertFileResult;
     }
@@ -272,7 +268,6 @@ exports.addProfile = async function (req, res) {
           edu.year,
           freelancerId,
         ];
-        console.log("queryParams: ", queryParams);
         const insertEducationResult = await queryRunner(
           insertEducationstQuery,
           queryParams

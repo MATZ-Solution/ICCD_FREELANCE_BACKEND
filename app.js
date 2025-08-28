@@ -16,6 +16,7 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const jobRoutes = require('./routes/jobRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 const superadminRoutes = require('./routes/superadminRoutes');
+const disputeRoutes = require('./routes/disputeRoute');
 const swaggerUi = require('swagger-ui-express');
 const swaggerFile = require('./swagger/swagger-output.json'); 
 
@@ -71,6 +72,8 @@ app.use("/order", orderRoutes);
 app.use("/client", clientRoutes);
 app.use("/stripe", stripeRoutes);
 app.use('/superadmin', superadminRoutes);
+app.use('/dispute', disputeRoutes);
+
 
 // app.use("/webhook", webhookRoute);
 

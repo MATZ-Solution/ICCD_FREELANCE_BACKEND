@@ -71,9 +71,6 @@ exports.getAllOrderByFreelancer = async (req, res) => {
 
     getOrderQuery += ` GROUP BY so.id ORDER BY so.id DESC `
 
-    console.log("getOrderQuery: ", getOrderQuery);
-    console.log("queryParam: ", queryParam);
-
     const selectResult = await queryRunner(getOrderQuery, queryParam);
     const validResult = selectResult[0].filter((item) => item.gigsID !== null);
 
@@ -161,7 +158,10 @@ exports.getAllOrderByClient = async (req, res) => {
   try {
     let queryParam = [];
     let getOrderQuery = `
-        SELECT so.*, g.*, (SELECT GROUP_CONCAT(gf.fileUrl)  FROM gigsfiles gf WHERE gf.gigID = so.gig_id ) as gigsImage
+        SELECT so.id as orderId, so.session_id, so.amount, so.status, so.gig_id, so.base_price,
+        so.total_price, so.package_type, so.revisions, so.client_id,
+        g.*, 
+        (SELECT GROUP_CONCAT(gf.fileUrl)  FROM gigsfiles gf WHERE gf.gigID = so.gig_id ) as gigsImage
         FROM stripeorders so
         LEFT JOIN gigs g ON g.id = so.gig_id
         WHERE so.client_id = ?
@@ -177,9 +177,6 @@ exports.getAllOrderByClient = async (req, res) => {
     const selectResult = await queryRunner(getOrderQuery, queryParam);
     const validResult = selectResult[0].filter((item) => item.gigsID !== null);
     if (validResult.length > 0) {
-
-      console.log("validResult: ", validResult)
-
       res.status(200).json({
         statusCode: 200,
         message: "Success",

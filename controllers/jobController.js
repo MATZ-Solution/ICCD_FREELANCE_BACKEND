@@ -74,8 +74,6 @@ exports.editJob = async function (req, res) {
     totalPersontoHire,
   } = req.body;
 
-  console.log("Edit Job Request Body:", req.body);
-
   try {
     const updateJobQuery = `
       UPDATE jobs 
@@ -128,7 +126,6 @@ exports.editJob = async function (req, res) {
 
 exports.getAllJob = async (req, res) => {
   const { jobTitle, jobType, joblocation } = req.query;
-  console.log("req.query: ", req.query);
   try {
     const queryParams = [];
     const queryValue = [];
@@ -148,8 +145,6 @@ exports.getAllJob = async (req, res) => {
     if (queryParams.length > 0) {
       getProjectQuery += "WHERE" + ` ${queryParams.join(" AND ")} `;
     }
-    console.log("getProjectQuery: ", getProjectQuery);
-    console.log("queryValue: ", queryValue);
 
     const selectResult = await queryRunner(getProjectQuery, queryValue);
     if (selectResult[0].length > 0) {
@@ -261,7 +256,6 @@ exports.applyJob = async function (req, res) {
       files[0].location,
       files[0].key,
     ];
-    console.log("values: ", values);
     const insertFileResult = await queryRunner(insertProposalsQuery, values);
 
     if (insertFileResult[0].affectedRows > 0) {

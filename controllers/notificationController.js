@@ -88,7 +88,6 @@ exports.countUnReadMesg = async (req, res) => {
       `SELECT COUNT(*) AS count FROM notifications WHERE  receiver_id = ? AND type = ? AND is_read = 0`,
       [id, type]
     );
-    console.log("result: ", result[0][0]);
     res.status(200).json({
       message: "success",
       data: [{ count: result[0][0]?.count, type: type }],
