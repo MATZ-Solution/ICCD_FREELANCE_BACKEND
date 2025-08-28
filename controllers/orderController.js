@@ -59,7 +59,7 @@ exports.getAllOrderByFreelancer = async (req, res) => {
         FROM stripeorders so
         JOIN gigs g ON g.id = so.gig_id
         JOIN gigsfiles gf ON gf.gigID = g.id
-        WHERE so.freelancer_id = ?
+        WHERE so.freelancer_id = ? AND so.isDisputed != 'true'
       
      `;
     queryParam.push(freelancerID);
@@ -160,10 +160,11 @@ exports.getAllOrderByClient = async (req, res) => {
     let getOrderQuery = `
         SELECT so.id as orderId, so.session_id, so.amount, so.status, so.gig_id, so.base_price,
         so.total_price, so.package_type, so.revisions, so.client_id,
-        g.*, 
+        g.*, f.userID as freelancerUserId,
         (SELECT GROUP_CONCAT(gf.fileUrl)  FROM gigsfiles gf WHERE gf.gigID = so.gig_id ) as gigsImage
         FROM stripeorders so
         LEFT JOIN gigs g ON g.id = so.gig_id
+        JOIN freelancers f ON  f.id = so.freelancer_id
         WHERE so.client_id = ? AND so.isDisputed != 'true'
      `;
     queryParam.push(clientID);
@@ -242,16 +243,29 @@ exports.getAllOrderByAdmin = async (req, res) => {
   }
 
   try {
-    const query = `
-       SELECT so.* , g.title, (Select GROUP_CONCAT(gf.fileUrl) AS gigsImage from gigsfiles gf where gf.gigID = g.id) as gigsImage
-       FROM stripeorders so
-       LEFT JOIN gigs g ON g.id = so.gig_id
-       LEFT JOIN gigsfiles gf ON gf.gigID = g.id
-       GROUP BY so.id
-            `;
+    const { search } = req.query;
 
-    const result = await queryRunner(query);
-    console.log("result: ", result[0])
+    let query = `
+      SELECT so.*, g.title, 
+      (SELECT GROUP_CONCAT(gf.fileUrl) AS gigsImage 
+       FROM gigsfiles gf 
+       WHERE gf.gigID = g.id) as gigsImage
+      FROM stripeorders so
+      LEFT JOIN gigs g ON g.id = so.gig_id
+      LEFT JOIN gigsfiles gf ON gf.gigID = g.id
+    `;
+
+    if (search) {
+      query += `
+        WHERE g.title LIKE ? OR so.package_type LIKE ? OR so.status LIKE ?
+      `;
+    }
+
+    query += ` GROUP BY so.id`;
+
+    const params = search ? [`%${search}%`, `%${search}%`, `%${search}%`] : [];
+    const result = await queryRunner(query, params);
+
     res.status(200).json({ orders: result[0] });
   } catch (error) {
     console.error("Error fetching orders:", error.message);

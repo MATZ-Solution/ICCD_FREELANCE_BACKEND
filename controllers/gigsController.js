@@ -67,7 +67,8 @@ exports.addGigs = async function (req, res) {
 };
 
 exports.getAllGigs = async (req, res) => {
-  const { search } = req.query;
+  const { search, freelancer_id } = req.query;
+  console.log("req.query: ", req.query)
   let queryParams = [];
   try {
     let getProjectQuery = `
@@ -78,13 +79,14 @@ exports.getAllGigs = async (req, res) => {
       FROM gigs g
       LEFT JOIN freelancers f ON f.id = g.freelancer_id
       LEFT JOIN gigsfiles gf ON gf.gigID = g.id
+      WHERE g.freelancer_id != ?
       `;
 
     if (search) {
-      getProjectQuery += ` WHERE g.title LIKE '%${search}%' OR g.description LIKE '%${search}%' `;
+      getProjectQuery += ` (AND g.title LIKE '%${search}%' OR g.description LIKE '%${search}%') `;
     }
     getProjectQuery += ` GROUP BY g.id `;
-    const selectResult = await queryRunner(getProjectQuery);
+    const selectResult = await queryRunner(getProjectQuery, [freelancer_id]);
 
     // const getData = selectResult[0].filter((data)=> data.id);
     // console.log("getData: ", getData)

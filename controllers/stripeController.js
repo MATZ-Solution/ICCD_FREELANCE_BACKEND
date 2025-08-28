@@ -93,6 +93,8 @@ exports.processOrder = async (req, res) => {
     session_id,
   } = req.body;
 
+  console.log("body: ", req.body)
+
   if (!session_id) {
     return res.status(400).json({ error: "Session ID is required" });
   }
@@ -145,7 +147,7 @@ exports.processOrder = async (req, res) => {
         let io = req.app.get("io");
         await handleNotifications(io, {
           sender_id: client_id,
-          receiver_id: freelancer_id,
+          receiver_id: freelancer_client_id,
           title: "New Order",
           message: "New Order Has Been Placed",
           type: "freelancer",

@@ -49,21 +49,21 @@ exports.getNotifications = async (req, res) => {
   try {
     const { userId } = req.user;
     const { id, type } = req.query;
+    console.log("query: ", req.query)
 
     let sql = `
-      SELECT n.*, u.name AS sender_name, u.email AS sender_email
-      FROM notifications n
-      JOIN users u ON n.sender_id = u.id
-      WHERE n.receiver_id = ?
+      SELECT *
+      FROM notifications 
+      WHERE receiver_id = ?
     `;
 
     const params = [id];
     if (type) {
-      sql += ` AND n.type = ?`;
+      sql += ` AND type = ?`;
       params.push(type);
     }
 
-    sql += ` ORDER BY n.created_at DESC`;
+    sql += ` ORDER BY created_at DESC`;
 
     const [results] = await queryRunner(sql, params);
 

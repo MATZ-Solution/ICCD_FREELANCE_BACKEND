@@ -2,7 +2,7 @@ const { queryRunner } = require("../helper/queryRunner");
 const handleNotifications = require("../utils/sendnotification");
 
 exports.addDispute = async function (req, res) {
-    const { subject, reason, raised_by, orderId, client_id, freelancer_id } = req.body;
+    const { subject, reason, raised_by, orderId, client_id, freelancer_id, freelancerUserId } = req.body;
     try {
 
         const insertDisputeQuery = `INSERT INTO dispute(subject, reason, raised_by, clientId, freelancerId, orderId, status) VALUES (?,?,?,?,?,?,?) `;
@@ -11,32 +11,42 @@ exports.addDispute = async function (req, res) {
         const insertResult = await queryRunner(insertDisputeQuery, queryParams);
 
         if (insertResult[0].affectedRows > 0) {
-            if (req.files.length > 0) {
-                for (const file of req.files) {
-                    const insertFileResult = await queryRunner(
-                        `INSERT INTO disputefiles(fileUrl, fileKey, disputeId, userType ) VALUES (?, ?, ?, ?)`,
-                        [file.location, file.key, insertResult[0].insertId, raised_by]
-                    );
-                    if (insertFileResult.affectedRows <= 0) {
-                        return res.status(500).json({
-                            statusCode: 500,
-                            message: "Failed to add files",
-                        });
+
+            const updateOrderQuery = `UPDATE stripeorders SET isDisputed = 'true' WHERE id = ? `
+            const updateResult = await queryRunner(updateOrderQuery, [orderId])
+            if (updateResult[0].affectedRows > 0) {
+                if (req.files.length > 0) {
+                    for (const file of req.files) {
+                        const insertFileResult = await queryRunner(
+                            `INSERT INTO disputefiles(fileUrl, fileKey, disputeId, userType ) VALUES (?, ?, ?, ?)`,
+                            [file.location, file.key, insertResult[0].insertId, raised_by]
+                        );
+                        if (insertFileResult.affectedRows <= 0) {
+                            return res.status(500).json({
+                                statusCode: 500,
+                                message: "Failed to add files",
+                            });
+                        }
                     }
                 }
+                let io = req.app.get("io");
+                await handleNotifications(io, {
+                    sender_id: raised_by === 'client' ? client_id : freelancerUserId,
+                    receiver_id: raised_by !== 'client' ? client_id : freelancerUserId,
+                    title: "Dispute",
+                    message: `${raised_by} raise a dispute. `,
+                    type: `${raised_by === 'client' ? 'freelancer' : 'client'}`,
+                });
+                return res.status(200).json({
+                    statusCode: 200,
+                    message: "Dispute created successfully.",
+                });
+            } else {
+                return res.status(500).json({
+                    statusCode: 500,
+                    message: "Failed to add dispute",
+                });
             }
-            let io = req.app.get("io");
-            await handleNotifications(io, {
-                sender_id: raised_by === 'client' ? client_id : freelancer_id,
-                receiver_id: raised_by !== 'client' ? client_id : freelancer_id,
-                title: "Dispute",
-                message: `${raised_by} raise a dispute. `,
-                type: `${raised_by === 'client' ? 'freelancer' : 'client'}`,
-            });
-            return res.status(200).json({
-                statusCode: 200,
-                message: "Dispute created successfully.",
-            });
         } else {
             return res.status(500).json({
                 statusCode: 500,
@@ -48,6 +58,58 @@ exports.addDispute = async function (req, res) {
         console.log("Error: ", error);
         return res.status(500).json({
             message: "Failed to add dispute",
+            message: error.message,
+        });
+    }
+};
+
+exports.addResponseDispute = async function (req, res) {
+    const { responseMessage, userId, userType, disputeId, client_id, freelancer_id } = req.body;
+    try {
+        const insertDisputeQuery = `INSERT INTO disputeresponse( message, userId, userType, disputeId ) VALUES (?,?,?,?) `;
+        const queryParams = [responseMessage, userId, userType, disputeId];
+        const insertResult = await queryRunner(insertDisputeQuery, queryParams);
+        if (insertResult[0].affectedRows > 0) {
+            // const updateOrderQuery = `UPDATE stripeorders SET isDisputed = 'true' WHERE id = ? `
+            // const updateResult = await queryRunner(updateOrderQuery, [orderId])
+            if (req.files.length > 0) {
+                for (const file of req.files) {
+                    const insertFileResult = await queryRunner(
+                        `INSERT INTO disputefiles(fileUrl, fileKey, disputeId, userType ) VALUES (?, ?, ?, ?)`,
+                        [file.location, file.key, disputeId, userType]
+                    );
+                    if (insertFileResult.affectedRows <= 0) {
+                        return res.status(500).json({
+                            statusCode: 500,
+                            message: "Failed to add files",
+                        });
+                    }
+                }
+            }
+            let io = req.app.get("io");
+            await handleNotifications(io, {
+                sender_id: userType === 'client' ? client_id : freelancer_id,
+                receiver_id: userType !== 'client' ? client_id : freelancer_id,
+                title: "Dispute",
+                message: `${userType} response to a dispute. `,
+                type: `${userType === 'client' ? 'freelancer' : 'client'}`,
+            });
+            return res.status(200).json({
+                statusCode: 200,
+                message: "Dispute responded successfully.",
+            });
+
+        } else {
+            return res.status(500).json({
+                statusCode: 500,
+                message: "Failed to respond dispute",
+            });
+        }
+
+    } catch (error) {
+        console.log("Error: ", error);
+        return res.status(500).json({
+            message: "Failed to respond dispute",
             message: error.message,
         });
     }
@@ -200,7 +262,7 @@ exports.getDisputeAdminById = async (req, res) => {
     try {
         const getDispute = `
             SELECT d.*, os.id as orderId, os.total_price, os.status as paymentStatus, g.id as gigId, g.title,
-            u.name as client, u.email as clientEmail, u.fileUrl as clientImg, 
+            u.name as client, u.email as clientEmail, u.fileUrl as clientImg,
             CONCAT(f.firstName, f.lastName) as freelancer, f.email as freelancerEmail, f.fileUrl as freelancerImg,
             (SELECT GROUP_CONCAT(df.fileUrl) FROM disputefiles df WHERE df.disputeId = d.id AND userType = 'freelancer' ) as disputeFilesFreelancer,
             (SELECT GROUP_CONCAT(df.fileUrl) FROM disputefiles df WHERE df.disputeId = d.id AND userType = 'client' ) as disputeFilesClient
@@ -213,11 +275,19 @@ exports.getDisputeAdminById = async (req, res) => {
             `;
         const selectResultClient = await queryRunner(getDispute, [id]);
 
+        const responseQuery = ` 
+        SELECT dr.message, dr.userType , dr.created_at,
+        (SELECT GROUP_CONCAT(df.fileUrl) FROM disputefiles df WHERE df.disputeId = dr.disputeId AND df.userType = 'freelancer' ) as disputeFilesFreelancer
+        FROM  disputeresponse dr
+        WHERE dr.disputeId = ? `
+        const responseResult = await queryRunner(responseQuery, [id]);
+
         if (selectResultClient[0].length > 0) {
             res.status(200).json({
                 statusCode: 200,
                 message: "Success",
                 data: selectResultClient[0],
+                responseData: responseResult[0]
             });
 
         } else {
@@ -226,6 +296,7 @@ exports.getDisputeAdminById = async (req, res) => {
                 message: "Dispute Not Found",
             });
         }
+
     } catch (error) {
         console.error("Query error: ", error);
         return res.status(500).json({
