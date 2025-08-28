@@ -26,9 +26,9 @@ exports.createCheckoutSession = async (req, res) => {
       })),
       mode: "payment",
       success_url:
-        "https://iccd.freelance.matzsolutions.com/success?session_id={CHECKOUT_SESSION_ID}",
+        "http://localhost:5173/client/payment/success?session_id={CHECKOUT_SESSION_ID}",
         
-      cancel_url: "https://iccd.freelance.matzsolutions.com/cancel",
+      cancel_url: "http://localhost:5173/client/payment/cancel",
       ...(customer_email
         ? { customer_email }
         : {
@@ -103,8 +103,8 @@ exports.processOrder = async (req, res) => {
     if (result[0].length === 0) {
       const query = `
         INSERT INTO stripeorders 
-        (session_id, email, amount, status, created_at, client_id, freelancer_id, gig_id, quantity, base_price, total_price, package_type, revisions)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (session_id, email, amount, status, created_at, client_id, freelancer_id, gig_id, quantity, base_price, total_price, package_type, revisions, isDisputed)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE 
         email = VALUES(email),
         amount = VALUES(amount),
@@ -116,7 +116,8 @@ exports.processOrder = async (req, res) => {
         base_price = VALUES(base_price),
         total_price = VALUES(total_price),
         package_type = VALUES(package_type),
-        revisions = VALUES(revisions)
+        revisions = VALUES(revisions),
+        isDisputed = VALUES(isDisputed)
       `;
 
       const data = [
@@ -133,6 +134,7 @@ exports.processOrder = async (req, res) => {
         totalPrice || null,
         packageType || null,
         revisions || null,
+        'false'
       ];
 
       const result = await queryRunner(query, data);

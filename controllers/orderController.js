@@ -164,8 +164,7 @@ exports.getAllOrderByClient = async (req, res) => {
         (SELECT GROUP_CONCAT(gf.fileUrl)  FROM gigsfiles gf WHERE gf.gigID = so.gig_id ) as gigsImage
         FROM stripeorders so
         LEFT JOIN gigs g ON g.id = so.gig_id
-        WHERE so.client_id = ?
-
+        WHERE so.client_id = ? AND so.isDisputed != 'true'
      `;
     queryParam.push(clientID);
     // if (search) {

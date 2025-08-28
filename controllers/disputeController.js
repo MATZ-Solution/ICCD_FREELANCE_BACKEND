@@ -2,7 +2,7 @@ const { queryRunner } = require("../helper/queryRunner");
 const handleNotifications = require("../utils/sendnotification");
 
 exports.addDispute = async function (req, res) {
-    const { subject, reason, raised_by, orderId, client_id, freelancer_id, user_id } = req.body;
+    const { subject, reason, raised_by, orderId, client_id, freelancer_id } = req.body;
     try {
 
         const insertDisputeQuery = `INSERT INTO dispute(subject, reason, raised_by, clientId, freelancerId, orderId, status) VALUES (?,?,?,?,?,?,?) `;
