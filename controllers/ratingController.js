@@ -2,12 +2,14 @@ const { queryRunner } = require("../helper/queryRunner");
 const { deleteS3File } = require("../utils/deleteS3Files")
 
 exports.addFreelancerRating = async (req, res) => {
-    const { orderId, clientId, freelancerId, ratings, review } = req.body;
+  console.log("body: ", req.body)
+    const { orderId, client_id, freelancer_id, rating, review } = req.body;
     try {
-        const params = [orderId, clientId, freelancerId, ratings, review]
+        const params = [orderId, client_id, freelancer_id, rating, review]
         const insertQuery = `
         INSERT INTO ratings (orderId, clientId, freelancerId, ratings, review) VALUES (?, ?, ?, ?, ?)
     `;
+    console.log("params: ", params)
         const selectResult = await queryRunner(insertQuery, params);
 
         if (selectResult[0].affectedRows > 0) {
