@@ -64,7 +64,8 @@ exports.addDispute = async function (req, res) {
 };
 
 exports.addResponseDispute = async function (req, res) {
-    const { responseMessage, userId, userType, disputeId, client_id, freelancer_id } = req.body;
+    const { responseMessage, userId, userType, disputeId, client_id, freelancerUserID } = req.body;
+    console.log("body: ", req.body)
     try {
         const insertDisputeQuery = `INSERT INTO disputeresponse( message, userId, userType, disputeId ) VALUES (?,?,?,?) `;
         const queryParams = [responseMessage, userId, userType, disputeId];
@@ -88,8 +89,8 @@ exports.addResponseDispute = async function (req, res) {
             }
             let io = req.app.get("io");
             await handleNotifications(io, {
-                sender_id: userType === 'client' ? client_id : freelancer_id,
-                receiver_id: userType !== 'client' ? client_id : freelancer_id,
+                sender_id: userType === 'client' ? client_id : freelancerUserID,
+                receiver_id: userType !== 'client' ? client_id : freelancerUserID,
                 title: "Dispute",
                 message: `${userType} response to a dispute. `,
                 type: `${userType === 'client' ? 'freelancer' : 'client'}`,
@@ -153,7 +154,8 @@ exports.getAllDisputeByFreelancer = async (req, res) => {
     const { userId } = req.params;
     try {
         const getDisputeQueryClient = `
-    SELECT d.*, CONCAT(f.firstName, f.lastName) as name
+    SELECT d.*, CONCAT(f.firstName, f.lastName) as name,
+    f.userId as freelancerUserID
     FROM dispute d
     JOIN freelancers f ON f.id = d.freelancerId
     WHERE d.freelancerId = ? 
@@ -187,20 +189,29 @@ exports.getDisputeById = async (req, res) => {
     const { id } = req.params;
     try {
         const getDispute = `
-    SELECT d.*, os.id as orderId, os.total_price, g.id as gigId, g.title,
-    (SELECT GROUP_CONCAT(df.fileUrl) FROM disputefiles df WHERE df.disputeId = d.id) as disputeFiles
-    FROM dispute d
-    JOIN stripeorders os ON os.id = d.orderId
-    JOIN gigs g ON g.id = os.gig_id
-    WHERE d.id = ?  
+        SELECT d.*, os.id as orderId, os.total_price, g.id as gigId, g.title,
+        (SELECT GROUP_CONCAT(df.fileUrl) FROM disputefiles df WHERE df.disputeId = d.id AND df.userType = 'client' ) as disputeFilesClient
+        FROM dispute d
+        JOIN stripeorders os ON os.id = d.orderId
+        JOIN gigs g ON g.id = os.gig_id
+        WHERE d.id = ?  
     `;
         const selectResult = await queryRunner(getDispute, [id]);
 
-        if (selectResult[0].length > 0) {
+         const responseQuery = ` 
+        SELECT dr.message, dr.userType , dr.created_at,
+        (SELECT GROUP_CONCAT(df.fileUrl) FROM disputefiles df WHERE df.disputeId = dr.disputeId AND df.userType = 'freelancer' ) as disputeFilesFreelancer
+        FROM  disputeresponse dr
+        WHERE dr.disputeId = ? `
+        const responseResult = await queryRunner(responseQuery, [id]);
+
+
+        if (selectResult[0].length > 0 ) {
             res.status(200).json({
                 statusCode: 200,
                 message: "Success",
                 data: selectResult[0],
+                responseData: responseResult[0]
             });
 
         } else {
