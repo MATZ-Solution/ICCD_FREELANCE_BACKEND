@@ -189,10 +189,12 @@ exports.getDisputeById = async (req, res) => {
     const { id } = req.params;
     try {
         const getDispute = `
-        SELECT d.*, os.id as orderId, os.total_price, g.id as gigId, g.title,
-        (SELECT GROUP_CONCAT(df.fileUrl) FROM disputefiles df WHERE df.disputeId = d.id AND df.userType = 'client' ) as disputeFilesClient
+        SELECT d.*, os.id as orderId, os.freelancer_id, os.total_price, g.id as gigId, g.title,
+        (SELECT GROUP_CONCAT(df.fileUrl) FROM disputefiles df WHERE df.disputeId = d.id AND df.userType = 'client' ) as disputeFilesClient,
+        f.userID as freelancerUserID
         FROM dispute d
         JOIN stripeorders os ON os.id = d.orderId
+        JOIN freelancers f  ON f.id = os.freelancer_id
         JOIN gigs g ON g.id = os.gig_id
         WHERE d.id = ?  
     `;
