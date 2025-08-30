@@ -23,7 +23,19 @@ exports.getAllUsers = async function (req, res) {
 
 exports.getAllFreelancers = async function (req, res) {
   try {
-        const sql = "SELECT f.*,  u.email,u.id , fs.* FROM freelancers f JOIN users u ON u.id = f.userID JOIN freelancer_skills fs on fs.freelancer_id = f.id ";
+    const sql = `
+      SELECT 
+        f.*, 
+        u.email, 
+        u.id AS user_id, 
+        (
+          SELECT GROUP_CONCAT(fs.skill) 
+          FROM freelancer_skills fs  
+          WHERE fs.freelancer_id = f.id
+        ) AS skills 
+      FROM freelancers f 
+      LEFT JOIN users u ON u.id = f.userID
+    `;
 
     const [rows] = await queryRunner(sql);
 
@@ -42,6 +54,7 @@ exports.getAllFreelancers = async function (req, res) {
     });
   }
 };
+
 
 exports.getAllGigs = async function (req, res) {
   try {
