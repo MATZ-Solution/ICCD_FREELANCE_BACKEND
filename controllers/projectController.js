@@ -174,7 +174,7 @@ exports.getAllProject = async (req, res) => {
 };
 
 exports.getProjectById = async (req, res) => {
-  const { projectId, freelancerId = null } = req.query;
+  const { projectId, freelancerId  } = req.query;
 
   try {
     const getProjectQuery = `

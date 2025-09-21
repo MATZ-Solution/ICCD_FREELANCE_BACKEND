@@ -83,7 +83,7 @@ exports.getAllGigs = async (req, res) => {
       `;
 
     if (search) {
-      getProjectQuery += ` (AND g.title LIKE '%${search}%' OR g.description LIKE '%${search}%') `;
+      getProjectQuery += `AND ( g.title LIKE '%${search}%' OR g.description LIKE '%${search}%') `;
     }
     getProjectQuery += ` GROUP BY g.id `;
     const selectResult = await queryRunner(getProjectQuery, [freelancer_id]);

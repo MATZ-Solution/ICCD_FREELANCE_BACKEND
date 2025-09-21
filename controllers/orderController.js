@@ -200,35 +200,44 @@ exports.getAllOrderByClient = async (req, res) => {
 
 exports.getSingleOrderByClient = async (req, res) => {
   const { orderId } = req.params;
+
   try {
+    // 1️⃣ Fetch order with gig info
     const getOrderQuery = `
-        SELECT 
-        o.*,
-        g.id as gigsID, g.title AS gigsTitle, g.description AS gigsDescription,
-        p.*
+      SELECT so.*, g.* ,(SELECT GROUP_CONCAT(gf.fileUrl)  FROM gigsfiles gf WHERE gf.gigID = so.gig_id ) as gigsImage
+      FROM stripeorders so
+      JOIN gigs g ON g.id = so.gig_id
+      WHERE so.id = ?
+    `;
+    const orderResult = await queryRunner(getOrderQuery, [orderId]);
 
-        FROM orders o
-        JOIN gigs g ON g.id = o.gigID
-        JOIN packages p ON p.id = o.packageID
-        WHERE o.id = ?
-     `;
-    const selectResult = await queryRunner(getOrderQuery, [orderId]);
-
-    if (selectResult[0].length > 0) {
-      res.status(200).json({
-        statusCode: 200,
-        message: "Success",
-        data: selectResult[0],
-      });
-    } else {
-      res.status(200).json({
-        data: [],
+    if (orderResult[0].length === 0) {
+      return res.status(200).json({
+        data: null,
         message: "Order Not Found",
       });
     }
+
+    const order = orderResult[0][0]; // single order with gig info
+
+    // 2️⃣ Fetch all packages for this gig
+    const getPackagesQuery = `
+      SELECT * FROM packages WHERE gigID = ?
+    `;
+    const packagesResult = await queryRunner(getPackagesQuery, [order.gig_id]);
+
+    res.status(200).json({
+      statusCode: 200,
+      message: "Success",
+      data: {
+        order,
+        packages: packagesResult[0], // array of packages
+      },
+    });
+
   } catch (error) {
     console.error("Query error: ", error);
-    return res.status(500).json({
+    res.status(500).json({
       statusCode: 500,
       message: "Failed to get order",
       error: error.message,

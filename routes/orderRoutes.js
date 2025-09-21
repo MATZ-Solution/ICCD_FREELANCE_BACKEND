@@ -12,6 +12,8 @@ router.get("/getAllOrderByFreelancer/:freelancerID",verifyToken, orderController
 router.get("/getSingleOrderByFreelancer/:orderId",verifyToken, orderController.getSingleOrderByFreelancer);
 router.get("/getAllOrderByClient/:clientID",verifyToken, orderController.getAllOrderByClient);
 router.get("/getAllOrderByAdmin", verifyToken, orderController.getAllOrderByAdmin);
+router.get("/getSingleOrderByClient/:orderId", verifyToken, orderController.getSingleOrderByClient);
+
 // router.get("/getSingleOrderByFreelancer/:orderId",verifyToken, orderController.getSingleOrderByFreelancer);
 
 module.exports = router;
