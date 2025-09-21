@@ -174,8 +174,7 @@ exports.getAllProject = async (req, res) => {
 };
 
 exports.getProjectById = async (req, res) => {
-  const { projectId, freelancerId  } = req.query;
-
+  const { projectId } = req.params;
   try {
     const getProjectQuery = `
     SELECT  p.*, GROUP_CONCAT(DISTINCT ps.name) AS skills, GROUP_CONCAT(DISTINCT pl.name) AS languages,
@@ -189,32 +188,11 @@ exports.getProjectById = async (req, res) => {
     const selectResult = await queryRunner(getProjectQuery, [projectId]);
 
     if (selectResult[0].length > 0) {
-      if(freelancerId){
-        const appliedQuery = `SELECT projectId, freelancerId FROM project_proposals WHERE projectId = ? AND freelancerId = ? `
-        const selectResultApplied = await queryRunner(appliedQuery, [projectId, freelancerId])
-        if (selectResultApplied[0].length > 0) {
-          res.status(200).json({
-            statusCode: 200,
-            message: "Success",
-            data: selectResult[0],
-            applied: true
-          });
-        } else {
-          res.status(200).json({
-            statusCode: 200,
-            message: "Success",
-            data: selectResult[0],
-            applied: false
-          });
-        }
-      }else{
-         res.status(200).json({
-            statusCode: 200,
-            message: "Success",
-            data: selectResult[0],
-          });
-      }
-
+      res.status(200).json({
+        statusCode: 200,
+        message: "Success",
+        data: selectResult[0]
+      });
     } else {
       res.status(200).json({
         data: [],

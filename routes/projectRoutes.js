@@ -6,7 +6,7 @@ const s3Upload = require('../middleware/s3Upload');
 
 router.get("/getAllProject" , projectController.getAllProject);
 router.get("/getProjectByClient" , verifyToken, projectController.getProjectByClient);
-router.get("/getProjectById" , projectController.getProjectById);
+router.get("/getProjectById/:projectId" , projectController.getProjectById);
 router.get("/getProjectPropsalByClient/:projectId" ,verifyToken, projectController.getProjectProposalsByClient);
 
 router.post("/addProject" ,verifyToken, s3Upload.array('files', 5), projectController.addProject);
