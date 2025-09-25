@@ -1,6 +1,7 @@
 const { queryRunner } = require("../helper/queryRunner");
 const { deleteS3File } = require("../utils/deleteS3Files");
 const { getTotalPage } = require("../helper/getTotalPage");
+const { param } = require("../routes/gigsRoutes");
 
 exports.addGigs = async function (req, res) {
   const {
@@ -328,13 +329,24 @@ exports.getPackages = async (req, res) => {
 exports.getGigsByUser = async (req, res) => {
   const { userId } = req.user;
   const { id } = req.params;
+  const { search = '', page = 1  } = req.query;
+  const limit = 10;
+  const offset = (page - 1) * limit;
   try {
+    let baseQuery = `
+      FROM gigs g 
+      LEFT JOIN gigsfiles gf ON gf.gigID = g.id
+      WHERE g.freelancer_id = ?
+    `;
+    let whereClause = "";
+    if (search) {
+      whereClause = ` AND (g.title LIKE '%${search}%' OR g.description LIKE '%${search}%')`;
+    }
     const getProjectQuery = `
     SELECT  g.*, GROUP_CONCAT(gf.fileUrl) AS gigsFiles
-    FROM gigs g 
-    LEFT JOIN gigsfiles gf ON gf.gigID = g.id
-    WHERE g.freelancer_id = ?
+    ${baseQuery} ${whereClause}
     GROUP BY g.id
+    LIMIT ${limit} OFFSET ${offset}
     `;
 
     const selectResult = await queryRunner(getProjectQuery, [id]);
@@ -345,11 +357,14 @@ exports.getGigsByUser = async (req, res) => {
     }));
 
     if (selectResult[0].length > 0) {
+      const countQuery = ` SELECT COUNT(DISTINCT g.id) AS total ${baseQuery} ${whereClause} `;
+      const totalPages = await getTotalPage(countQuery, limit, [id]);
       res.status(200).json({
         statusCode: 200,
         message: "Success",
         // data: selectResult[0]
         data: filterData,
+        totalPages
       });
     } else {
       res.status(200).json({

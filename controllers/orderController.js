@@ -1,4 +1,5 @@
 const { queryRunner } = require("../helper/queryRunner");
+const { getTotalPage } = require("../helper/getTotalPage");
 
 exports.createOrder = async function (req, res) {
   const {
@@ -46,8 +47,20 @@ exports.createOrder = async function (req, res) {
 
 exports.getAllOrderByFreelancer = async (req, res) => {
   const { freelancerID } = req.params;  // changed from freelancerID to id
-  const { search } = req.query;
+  const { search, page = 1 } = req.query;
+  const limit = 10;
+  const offset = (page - 1) * limit;
   try {
+    let baseQuery = `
+        FROM stripeorders so
+        JOIN gigs g ON g.id = so.gig_id
+        JOIN gigsfiles gf ON gf.gigID = g.id
+        WHERE so.freelancer_id = ? AND so.isDisputed != 'true'
+    `;
+    let whereClause = "";
+    if (search) {
+      whereClause = ` AND g.title LIKE '%${search}%' `;
+    }
     let queryParam = [];
     let getOrderQuery = `
         SELECT 
@@ -56,29 +69,23 @@ exports.getAllOrderByFreelancer = async (req, res) => {
           so.base_price, so.package_type, so.status,
           g.id as gigsID, g.title AS gigsTitle, g.description AS gigsDescription,
           GROUP_CONCAT(gf.fileUrl) AS gigsImage
-        FROM stripeorders so
-        JOIN gigs g ON g.id = so.gig_id
-        JOIN gigsfiles gf ON gf.gigID = g.id
-        WHERE so.freelancer_id = ? AND so.isDisputed != 'true'
-      
+          ${baseQuery} ${whereClause}
+          GROUP BY so.id ORDER BY so.id DESC
+          LIMIT ${limit} OFFSET ${offset}
      `;
     queryParam.push(freelancerID);
-    if (search) {
-      getOrderQuery += ` AND g.title LIKE ?`;
-      const searchTerm = `%${search}%`;
-      queryParam.push(searchTerm);
-    }
-
-    getOrderQuery += ` GROUP BY so.id ORDER BY so.id DESC `
 
     const selectResult = await queryRunner(getOrderQuery, queryParam);
     const validResult = selectResult[0].filter((item) => item.gigsID !== null);
 
     if (validResult.length > 0) {
+      const countQuery = ` SELECT COUNT(DISTINCT so.id) AS total ${baseQuery} ${whereClause} `;
+      const totalPages = await getTotalPage(countQuery, limit, [freelancerID]);
       res.status(200).json({
         statusCode: 200,
         message: "Success",
         data: validResult,
+        totalPages
       });
     } else {
       res.status(200).json({
@@ -154,18 +161,26 @@ exports.getSingleOrderByFreelancer = async (req, res) => {
 
 exports.getAllOrderByClient = async (req, res) => {
   const { clientID } = req.params;
-  const { search } = req.query;
+  const { search, page = 1 } = req.query;
+  const limit = 10;
+  const offset = (page - 1) * limit;
   try {
     let queryParam = [];
+    let baseQuery = ` FROM stripeorders so
+        LEFT JOIN gigs g ON g.id = so.gig_id
+        JOIN freelancers f ON  f.id = so.freelancer_id `
+    let whereClause = "";
+    if (search) {
+      whereClause = ` WHERE so.client_id = ? AND so.isDisputed != 'true' `;
+    }
     let getOrderQuery = `
         SELECT so.id as orderId, so.session_id, so.amount, so.status, so.gig_id, so.base_price,
         so.total_price, so.package_type, so.revisions, so.client_id,
         g.*, f.userID as freelancerUserId,
         (SELECT GROUP_CONCAT(gf.fileUrl)  FROM gigsfiles gf WHERE gf.gigID = so.gig_id ) as gigsImage
-        FROM stripeorders so
-        LEFT JOIN gigs g ON g.id = so.gig_id
-        JOIN freelancers f ON  f.id = so.freelancer_id
-        WHERE so.client_id = ? AND so.isDisputed != 'true'
+        ${baseQuery}
+       ${whereClause}
+       LIMIT ${limit} OFFSET ${offset}
      `;
     queryParam.push(clientID);
     // if (search) {
@@ -177,10 +192,13 @@ exports.getAllOrderByClient = async (req, res) => {
     const selectResult = await queryRunner(getOrderQuery, queryParam);
     const validResult = selectResult[0].filter((item) => item.gigsID !== null);
     if (validResult.length > 0) {
+      const countQuery = ` SELECT COUNT(DISTINCT so.id) as total ${baseQuery} ${whereClause} `;
+      const totalPages = await getTotalPage(countQuery, limit);
       res.status(200).json({
         statusCode: 200,
         message: "Success",
         data: validResult,
+        totalPages
       });
     } else {
       res.status(200).json({

@@ -1,5 +1,6 @@
 const { queryRunner } = require("../helper/queryRunner");
 const handleNotifications = require("../utils/sendnotification");
+const { getTotalPage } = require("../helper/getTotalPage");
 
 exports.addJob = async function (req, res) {
   const { userId } = req.user;
@@ -203,25 +204,33 @@ exports.getJobById = async (req, res) => {
 };
 
 exports.getJobByClient = async (req, res) => {
-  let { search } = req.query
+  let { search, page = 1 } = req.query
   const { userId } = req.user;
-  try {
-    let getJobQuery = `
-       SELECT  j.*, u.name FROM jobs j
-       LEFT JOIN users u ON u.id = j.clientID
-       WHERE u.id = ?
-    `;
+  const limit = 12;
+  const offset = (page - 1) * limit;
 
+  try {
+    let baseQuery = `
+     FROM jobs j
+     LEFT JOIN users u ON u.id = j.clientID
+     WHERE u.id = ?
+    `;
+    let whereClause = "";
     if (search) {
-      getJobQuery += ` AND ( j.jobTitle LIKE '%${search}%' )`;
+      whereClause = `AND ( j.jobTitle LIKE '%${search}%' ) `;
     }
+    let getJobQuery = ` SELECT  j.*, u.name ${baseQuery} ${whereClause} `;
+
     const selectResult = await queryRunner(getJobQuery, [userId]);
 
     if (selectResult[0].length > 0) {
+      const countQuery = ` SELECT COUNT(DISTINCT j.id) AS total ${baseQuery} ${whereClause} `;
+      const totalPages = await getTotalPage(countQuery, limit, [userId]);
       res.status(200).json({
         statusCode: 200,
         message: "Success",
         data: selectResult[0],
+        totalPages
       });
     } else {
       res.status(200).json({

@@ -1,5 +1,6 @@
 const { queryRunner } = require("../helper/queryRunner");
 const handleNotifications = require("../utils/sendnotification");
+const { getTotalPage } = require("../helper/getTotalPage");
 
 exports.addDispute = async function (req, res) {
     const { subject, reason, raised_by, orderId, client_id, freelancer_id, freelancerUserId } = req.body;
@@ -152,21 +153,37 @@ exports.getAllDisputeByClient = async (req, res) => {
 
 exports.getAllDisputeByFreelancer = async (req, res) => {
     const { userId } = req.params;
+    const { search, page = 1 } = req.query;
+    const limit = 12;
+    const offset = (page - 1) * limit;
+
     try {
+        let baseQuery = `
+            FROM dispute d
+            JOIN freelancers f ON f.id = d.freelancerId
+            WHERE d.freelancerId = ? 
+            `;
+        let whereClause = "";
+        if (search) {
+            whereClause = ``;
+        }
         const getDisputeQueryClient = `
-    SELECT d.*, CONCAT(f.firstName, f.lastName) as name,
-    f.userId as freelancerUserID
-    FROM dispute d
-    JOIN freelancers f ON f.id = d.freelancerId
-    WHERE d.freelancerId = ? 
-    `;
+        SELECT d.*, CONCAT(f.firstName, f.lastName) as name,
+        f.userId as freelancerUserID 
+        ${baseQuery} ${whereClause}
+        LIMIT ${limit} OFFSET ${offset}
+        `;
+
         const selectResultClient = await queryRunner(getDisputeQueryClient, [userId]);
 
         if (selectResultClient[0].length > 0) {
+            const countQuery = ` SELECT COUNT(DISTINCT d.id) AS total ${baseQuery} ${whereClause} `;
+            const totalPages = await getTotalPage(countQuery, limit, [userId]);
             res.status(200).json({
                 statusCode: 200,
                 message: "Success",
                 data: selectResultClient[0],
+                totalPages
             });
 
         } else {
@@ -200,7 +217,7 @@ exports.getDisputeById = async (req, res) => {
     `;
         const selectResult = await queryRunner(getDispute, [id]);
 
-         const responseQuery = ` 
+        const responseQuery = ` 
         SELECT dr.message, dr.userType , dr.created_at,
         (SELECT GROUP_CONCAT(df.fileUrl) FROM disputefiles df WHERE df.disputeId = dr.disputeId AND df.userType = 'freelancer' ) as disputeFilesFreelancer
         FROM  disputeresponse dr
@@ -208,7 +225,7 @@ exports.getDisputeById = async (req, res) => {
         const responseResult = await queryRunner(responseQuery, [id]);
 
 
-        if (selectResult[0].length > 0 ) {
+        if (selectResult[0].length > 0) {
             res.status(200).json({
                 statusCode: 200,
                 message: "Success",

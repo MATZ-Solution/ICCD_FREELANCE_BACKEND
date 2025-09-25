@@ -107,27 +107,33 @@ exports.addProject = async function (req, res) {
 };
 
 exports.getProjectByClient = async (req, res) => {
-  const { search } = req.query;
+  const { search, page = 1 } = req.query;
   const { userId } = req.user;
+  const limit = 12;
+  const offset = (page - 1) * limit;
+
   try {
+    let baseQuery = `
+      FROM projects p 
+      LEFT JOIN projectfiles pf ON pf.projectID = p.id
+      LEFT JOIN project_skills ps ON ps.project_id = p.id
+      LEFT JOIN project_proposals pp ON pp.projectId = p.id
+      WHERE p.clientID = ?
+    `;
+    let whereClause = "";
+    if (search) {
+      whereClause = `AND ( p.title LIKE '%${search}%' OR p.description LIKE '%${search}%' OR p.category LIKE '%${search}%' OR p.subCategory LIKE '%${search}%' ) `;
+    }
+
     let getProjectQuery = `
     SELECT  p.*, GROUP_CONCAT(pf.fileUrl) AS projectFiles, GROUP_CONCAT(ps.name) AS projectSkills,
     COUNT(DISTINCT pp.id) AS totalProposals
-    FROM projects p 
-    LEFT JOIN projectfiles pf ON pf.projectID = p.id
-    LEFT JOIN project_skills ps ON ps.project_id = p.id
-    LEFT JOIN project_proposals pp ON pp.projectId = p.id
-    WHERE p.clientID = ?
+    ${baseQuery}
+    ${whereClause}
+     GROUP BY p.id
     `;
 
-    if (search) {
-      getProjectQuery += ` AND ( p.title LIKE '%${search}%' OR p.description LIKE '%${search}%' OR p.category LIKE '%${search}%' OR p.subCategory LIKE '%${search}%' )`;
-    }
-
-    getProjectQuery += ` GROUP BY p.id `;
-
     const selectResult = await queryRunner(getProjectQuery, [userId]);
-
     const filterData = selectResult[0].map((item) => ({
       ...item,
       projectSkills: item.projectSkills ? item.projectSkills.split(",") : [],
@@ -135,11 +141,14 @@ exports.getProjectByClient = async (req, res) => {
     }));
 
     if (selectResult[0].length > 0) {
+      const countQuery = ` SELECT COUNT(DISTINCT p.id) AS total ${baseQuery} ${whereClause} `;
+      const totalPages = await getTotalPage(countQuery, limit, [userId]);
       res.status(200).json({
         statusCode: 200,
         message: "Success",
         // data: selectResult[0]
         data: filterData,
+        totalPages
       });
     } else {
       res.status(200).json({
@@ -159,7 +168,7 @@ exports.getProjectByClient = async (req, res) => {
 
 exports.getAllProject = async (req, res) => {
   const { search, page = 1 } = req.query;
-  const limit = 12;
+  const limit = 10;
   const offset = (page - 1) * limit;
 
   try {
@@ -170,7 +179,7 @@ exports.getAllProject = async (req, res) => {
       whereClause += ` WHERE title LIKE '%${search}%' OR description LIKE '%${search}%' OR category LIKE '%${search}%' OR subCategory LIKE '%${search}%' `;
     }
 
-    let getProjectQuery = `SELECT *  ${baseQuery} ${whereClause}`;
+    let getProjectQuery = `SELECT *  ${baseQuery} ${whereClause} LIMIT ${limit} OFFSET ${offset}`;
 
     const selectResult = await queryRunner(getProjectQuery);
 
