@@ -147,9 +147,11 @@ exports.addGigs = async function (req, res) {
 // };
 
 exports.getAllGigs = async (req, res) => {
-  const { search, page = 1 } = req.query;
-  const limit = 12;
+  const { search, page = 1, freelancer_id } = req.query;
+  const limit = 15;
   const offset = (page - 1) * limit;
+
+  console.log("query: ", req.query)
 
   try {
     let baseQuery = `
@@ -157,9 +159,17 @@ exports.getAllGigs = async (req, res) => {
       LEFT JOIN freelancers f ON f.id = g.freelancer_id
       LEFT JOIN gigsfiles gf ON gf.gigID = g.id
     `;
-    let whereClause = "";
+    let whereCond = [];
+    let whereClause = ""
     if (search) {
-      whereClause = `WHERE (g.title LIKE '%${search}%' OR g.description LIKE '%${search}%')`;
+      whereCond.push(` (g.title LIKE '%${search}%' OR g.description LIKE '%${search}%') `);
+    }
+    if(freelancer_id && freelancer_id !== 'undefined'){
+      whereCond.push(` freelancer_id != ${freelancer_id} `);
+    }
+    if(whereCond.length > 0){
+      whereCond.join(" AND ")
+      whereClause += ` WHERE ${whereCond} `
     }
     let getProjectQuery = `
       SELECT 

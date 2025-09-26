@@ -118,21 +118,34 @@ exports.addResponseDispute = async function (req, res) {
 };
 
 exports.getAllDisputeByClient = async (req, res) => {
+    const { search, page = 1 } = req.query;
     const { userId } = req.params;
+    const limit = 10;
+    const offset = (page - 1) * limit;
     try {
+        let baseQuery = ` FROM dispute d
+        JOIN users u ON u.id = d.clientId
+        WHERE d.clientId = ? `;
+        let whereClause = "";
+        if (search) {
+            whereClause = ``;
+        }
         const getDisputeQueryClient = `
-    SELECT d.*, u.name
-    FROM dispute d
-    JOIN users u ON u.id = d.clientId
-    WHERE d.clientId = ?  
-    `;
+        SELECT d.*, u.name 
+        ${baseQuery} ${whereClause}
+        LIMIT ${limit} OFFSET ${offset}
+        `;
+
         const selectResultClient = await queryRunner(getDisputeQueryClient, [userId]);
 
         if (selectResultClient[0].length > 0) {
+            const countQuery = ` SELECT COUNT(DISTINCT d.id) AS total ${baseQuery} ${whereClause} `;
+            const totalPages = await getTotalPage(countQuery, limit, [userId]);
             res.status(200).json({
                 statusCode: 200,
                 message: "Success",
                 data: selectResultClient[0],
+                totalPages
             });
 
         } else {

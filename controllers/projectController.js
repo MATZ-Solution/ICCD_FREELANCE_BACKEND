@@ -109,7 +109,7 @@ exports.addProject = async function (req, res) {
 exports.getProjectByClient = async (req, res) => {
   const { search, page = 1 } = req.query;
   const { userId } = req.user;
-  const limit = 12;
+  const limit = 10;
   const offset = (page - 1) * limit;
 
   try {
@@ -131,6 +131,7 @@ exports.getProjectByClient = async (req, res) => {
     ${baseQuery}
     ${whereClause}
      GROUP BY p.id
+     LIMIT ${limit} OFFSET ${offset}
     `;
 
     const selectResult = await queryRunner(getProjectQuery, [userId]);
