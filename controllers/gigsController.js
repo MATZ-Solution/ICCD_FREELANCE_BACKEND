@@ -168,8 +168,8 @@ exports.getAllGigs = async (req, res) => {
       whereCond.push(` freelancer_id != ${freelancer_id} `);
     }
     if(whereCond.length > 0){
-      whereCond.join(" AND ")
-      whereClause += ` WHERE ${whereCond} `
+      let concat_whereCond = whereCond.join(" AND ")
+      whereClause += ` WHERE ${concat_whereCond} `
     }
     let getProjectQuery = `
       SELECT 

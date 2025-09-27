@@ -126,11 +126,17 @@ exports.editJob = async function (req, res) {
 };
 
 exports.getAllJob = async (req, res) => {
-  const { jobTitle, jobType, joblocation } = req.query;
+  const { jobTitle, jobType, joblocation, page = 1 } = req.query;
+  const limit = 10;
+  const offset = (page - 1) * limit;
   try {
+    let baseQuery = `
+      FROM jobs j LEFT JOIN users u ON u.id = j.clientID 
+    `;
     const queryParams = [];
     const queryValue = [];
-    let getProjectQuery = `SELECT j.*, u.name FROM jobs j LEFT JOIN users u ON u.id = j.clientID `;
+    const whereClause = ""
+    
     if (jobTitle) {
       queryParams.push(` j.jobTitle LIKE ? `);
       queryValue.push(`%${jobTitle}%`);
@@ -144,15 +150,24 @@ exports.getAllJob = async (req, res) => {
       queryValue.push(`%${joblocation}%`);
     }
     if (queryParams.length > 0) {
-      getProjectQuery += "WHERE" + ` ${queryParams.join(" AND ")} `;
+      whereClause += "WHERE" + ` ${queryParams.join(" AND ")} `;
     }
 
+    let getProjectQuery = `SELECT j.*, u.name 
+    ${baseQuery} 
+    ${whereClause}
+     LIMIT ${limit} OFFSET ${offset}
+    `;
+
     const selectResult = await queryRunner(getProjectQuery, queryValue);
+    const countQuery = ` SELECT COUNT(DISTINCT j.id) AS total ${baseQuery} ${whereClause} `;
+    const totalPages = await getTotalPage(countQuery, limit);
     if (selectResult[0].length > 0) {
       res.status(200).json({
         statusCode: 200,
         message: "Success",
         data: selectResult[0],
+        totalPages
       });
     } else {
       res.status(200).json({
@@ -204,7 +219,7 @@ exports.getJobById = async (req, res) => {
 };
 
 exports.getJobByClient = async (req, res) => {
-  let { search, page = 1 } = req.query
+  let { search, page = 1 } = req.query;
   const { userId } = req.user;
   const limit = 12;
   const offset = (page - 1) * limit;
@@ -230,7 +245,7 @@ exports.getJobByClient = async (req, res) => {
         statusCode: 200,
         message: "Success",
         data: selectResult[0],
-        totalPages
+        totalPages,
       });
     } else {
       res.status(200).json({
@@ -288,8 +303,8 @@ exports.applyJob = async function (req, res) {
 };
 
 exports.getJobProposalsByClient = async (req, res) => {
-  const { userId } = req.user
-  const { id } = req.query
+  const { userId } = req.user;
+  const { id } = req.query;
   try {
     const getJobQuery = `
     SELECT  jp.experience, jp.fileUrl,
