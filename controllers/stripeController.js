@@ -26,9 +26,9 @@ exports.createCheckoutSession = async (req, res) => {
       })),
       mode: "payment",
       success_url:
-        "http://localhost:5173/client/payment/success?session_id={CHECKOUT_SESSION_ID}",
+        "https://iccdtalentgate.com/client/payment/success?session_id={CHECKOUT_SESSION_ID}",
         
-      cancel_url: "http://localhost:5173/client/payment/cancel",
+      cancel_url: "https://iccdtalentgate.com/client/payment/cancel",
       ...(customer_email
         ? { customer_email }
         : {
