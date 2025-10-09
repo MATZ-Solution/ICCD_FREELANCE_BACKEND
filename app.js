@@ -18,6 +18,12 @@ const messageRoutes = require('./routes/messageRoutes');
 const superadminRoutes = require('./routes/superadminRoutes');
 const disputeRoutes = require('./routes/disputeRoute');
 const ratingRoutes = require('./routes/ratingsRoute');
+const feedbackRoutes = require('./routes/feedbackRoute');
+const issueRoutes = require('./routes/issueRoutes');
+const contactRoutes = require('./routes/contactsRoute');
+
+
+
 const swaggerUi = require('swagger-ui-express');
 const swaggerFile = require('./swagger/swagger-output.json'); 
 
@@ -75,6 +81,9 @@ app.use("/stripe", stripeRoutes);
 app.use('/superadmin', superadminRoutes);
 app.use('/dispute', disputeRoutes);
 app.use('/rating', ratingRoutes);
+app.use('/feedback', feedbackRoutes);
+app.use('/issue', issueRoutes);
+app.use('/contact', contactRoutes);
 
 
 // app.use("/webhook", webhookRoute);

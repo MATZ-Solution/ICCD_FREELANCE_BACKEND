@@ -1,5 +1,7 @@
 const { queryRunner } = require("../helper/queryRunner");
-const { deleteS3File } = require("../utils/deleteS3Files")
+const { deleteS3File } = require("../utils/deleteS3Files");
+const { getTotalPage } = require("../helper/getTotalPage");
+const { param } = require("../routes/gigsRoutes");
 
 exports.addGigs = async function (req, res) {
   const {
@@ -13,7 +15,13 @@ exports.addGigs = async function (req, res) {
   try {
     // Add project into database
     const insertGigsQuery = `INSERT INTO gigs(title, description, category, subCategory, freelancer_id) VALUES (?,?,?,?,?) `;
-    const queryParamsGigs = [gigsTitle, description, category, subCategory, freelancerId ];
+    const queryParamsGigs = [
+      gigsTitle,
+      description,
+      category,
+      subCategory,
+      freelancerId,
+    ];
 
     // add gigs in gigs table
     const insertGigsResult = await queryRunner(
@@ -28,12 +36,29 @@ exports.addGigs = async function (req, res) {
     for (const key of ["basic", "standard", "premium"]) {
       const pkg = parsedPackages[key];
       if (!pkg) continue;
-      const {packageType, name, description, delivery_time, revisions, price, ...rest} = pkg 
+      const {
+        packageType,
+        name,
+        description,
+        delivery_time,
+        revisions,
+        price,
+        ...rest
+      } = pkg;
       await queryRunner(
         `
         INSERT INTO packages(packageType, name, description, deliveryTime, revisions, price, packages, gigID)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [packageType, name, description, delivery_time, revisions, price, JSON.stringify(rest) ,gigId]
+        [
+          packageType,
+          name,
+          description,
+          delivery_time,
+          revisions,
+          price,
+          JSON.stringify(rest),
+          gigId,
+        ]
       );
     }
 
@@ -66,36 +91,106 @@ exports.addGigs = async function (req, res) {
   }
 };
 
+// exports.getAllGigs = async (req, res) => {
+//   const { search, page = 1 } = req.query;
+//   const limit = 12;
+//   const offset = (page - 1) * limit
+//   console.log("req.query1: ", req.query)
+//   let queryParams = [];
+//   try {
+//     let getProjectQuery = `
+//     SELECT
+//         g.*,
+//         f.firstName, f.lastName, f.about_description,f.fileUrl as freelancerImg,
+//         GROUP_CONCAT(gf.fileUrl) AS fileUrls
+//       FROM gigs g
+//       LEFT JOIN freelancers f ON f.id = g.freelancer_id
+//       LEFT JOIN gigsfiles gf ON gf.gigID = g.id
+//       `;
+
+//     if (search) {
+//       getProjectQuery += `WHERE ( g.title LIKE '%${search}%' OR g.description LIKE '%${search}%') `;
+//     }
+//     getProjectQuery += ` GROUP BY g.id `;
+//     const selectResult = await queryRunner(getProjectQuery);
+
+//       let countQuery = `
+//       SELECT COUNT(DISTINCT g.id) AS total
+//       FROM gigs g
+//       LEFT JOIN freelancers f ON f.id = g.freelancer_id
+//       LEFT JOIN gigsfiles gf ON gf.gigID = g.id
+//       ${search ? `WHERE g.title LIKE '%${search}%' OR g.description LIKE '%${search}%'` : ""}
+//     `;
+//     const total = (await queryRunner(countQuery))[0][0].total;
+//     const totalPages = Math.ceil(total / limit);
+
+//     if (selectResult[0].length > 0) {
+//       res.status(200).json({
+//         statusCode: 200,
+//         message: "Success",
+//         data: selectResult[0],
+//       });
+//     } else {
+//       res.status(200).json({
+//         data: [],
+//         message: "Gigs Not Found",
+//       });
+//     }
+//   } catch (error) {
+//     console.error("Query error: ", error);
+//     return res.status(500).json({
+//       statusCode: 500,
+//       message: "Failed to get gigs",
+//       error: error.message,
+//     });
+//   }
+// };
+
 exports.getAllGigs = async (req, res) => {
-  const { search } = req.query;
-  console.log("req.query1: ", req.query)
-  let queryParams = [];
+  const { search, page = 1, freelancer_id } = req.query;
+  const limit = 15;
+  const offset = (page - 1) * limit;
+
+  console.log("query: ", req.query)
+
   try {
-    let getProjectQuery = `
-    SELECT 
-        g.*,
-        f.firstName, f.lastName, f.about_description,f.fileUrl as freelancerImg,
-        GROUP_CONCAT(gf.fileUrl) AS fileUrls
+    let baseQuery = `
       FROM gigs g
       LEFT JOIN freelancers f ON f.id = g.freelancer_id
       LEFT JOIN gigsfiles gf ON gf.gigID = g.id
-      `;
-
+    `;
+    let whereCond = [];
+    let whereClause = ""
     if (search) {
-      getProjectQuery += `WHERE ( g.title LIKE '%${search}%' OR g.description LIKE '%${search}%') `;
+      whereCond.push(` (g.title LIKE '%${search}%' OR g.description LIKE '%${search}%') `);
     }
-    getProjectQuery += ` GROUP BY g.id `;
+    if(freelancer_id && freelancer_id !== 'undefined'){
+      whereCond.push(` freelancer_id != ${freelancer_id} `);
+    }
+    if(whereCond.length > 0){
+      let concat_whereCond = whereCond.join(" AND ")
+      whereClause += ` WHERE ${concat_whereCond} `
+    }
+    let getProjectQuery = `
+      SELECT 
+        g.*,
+        f.firstName, f.lastName, f.about_description, f.fileUrl as freelancerImg,
+        GROUP_CONCAT(gf.fileUrl) AS fileUrls
+      ${baseQuery}
+      ${whereClause}
+      GROUP BY g.id
+      LIMIT ${limit} OFFSET ${offset}
+    `;
     const selectResult = await queryRunner(getProjectQuery);
 
-    // const getData = selectResult[0].filter((data)=> data.id);
-    // console.log("getData: ", getData)
-    // const getFiles = [...new Set(selectResult[0].map((item) => item.fileUrl))];
-
     if (selectResult[0].length > 0) {
+      const countQuery = ` SELECT COUNT(DISTINCT g.id) AS total ${baseQuery} ${whereClause} `;
+      const totalPages = await getTotalPage(countQuery, limit);
       res.status(200).json({
         statusCode: 200,
         message: "Success",
         data: selectResult[0],
+        totalPages
       });
     } else {
       res.status(200).json({
@@ -151,7 +246,7 @@ exports.getSingleGigs = async (req, res) => {
       FreelancerLanguages,
       gigsID,
       freelancerId,
-      freelancerClientId
+      freelancerClientId,
     } = selectResult[0][0];
 
     const filterData = selectResult[0].map((item) => ({
@@ -162,9 +257,9 @@ exports.getSingleGigs = async (req, res) => {
       deliveryTime: item.deliveryTime,
       revisions: item.revisions,
       price: item.price,
-      packages: item.gigPackages
+      packages: item.gigPackages,
     }));
-   
+
     const obj = {
       gigsDescription: {
         gigsID: gigsID,
@@ -182,7 +277,7 @@ exports.getSingleGigs = async (req, res) => {
         FreelancerLanguages,
         FreelancerLanguages,
         freelancerPic: freelancerPic,
-        freelancerClientId
+        freelancerClientId,
       },
       packagesDetails: filterData,
     };
@@ -213,7 +308,7 @@ exports.getSingleGigs = async (req, res) => {
 
 exports.getPackages = async (req, res) => {
   const { id } = req.params;
-  
+
   try {
     const getPackageQuery = `SELECT * FROM packages WHERE gigID = ? `;
     const selectResult = await queryRunner(getPackageQuery, [id]);
@@ -222,7 +317,7 @@ exports.getPackages = async (req, res) => {
       res.status(200).json({
         statusCode: 200,
         message: "Success",
-        data: selectResult[0]
+        data: selectResult[0],
         // data: filterData,
       });
     } else {
@@ -244,13 +339,24 @@ exports.getPackages = async (req, res) => {
 exports.getGigsByUser = async (req, res) => {
   const { userId } = req.user;
   const { id } = req.params;
+  const { search = '', page = 1  } = req.query;
+  const limit = 10;
+  const offset = (page - 1) * limit;
   try {
+    let baseQuery = `
+      FROM gigs g 
+      LEFT JOIN gigsfiles gf ON gf.gigID = g.id
+      WHERE g.freelancer_id = ?
+    `;
+    let whereClause = "";
+    if (search) {
+      whereClause = ` AND (g.title LIKE '%${search}%' OR g.description LIKE '%${search}%')`;
+    }
     const getProjectQuery = `
     SELECT  g.*, GROUP_CONCAT(gf.fileUrl) AS gigsFiles
-    FROM gigs g 
-    LEFT JOIN gigsfiles gf ON gf.gigID = g.id
-    WHERE g.freelancer_id = ?
+    ${baseQuery} ${whereClause}
     GROUP BY g.id
+    LIMIT ${limit} OFFSET ${offset}
     `;
 
     const selectResult = await queryRunner(getProjectQuery, [id]);
@@ -261,11 +367,14 @@ exports.getGigsByUser = async (req, res) => {
     }));
 
     if (selectResult[0].length > 0) {
+      const countQuery = ` SELECT COUNT(DISTINCT g.id) AS total ${baseQuery} ${whereClause} `;
+      const totalPages = await getTotalPage(countQuery, limit, [id]);
       res.status(200).json({
         statusCode: 200,
         message: "Success",
         // data: selectResult[0]
         data: filterData,
+        totalPages
       });
     } else {
       res.status(200).json({
@@ -295,7 +404,7 @@ exports.getGigsOverview = async (req, res) => {
       res.status(200).json({
         statusCode: 200,
         message: "Success",
-        data: selectResult[0]
+        data: selectResult[0],
       });
     } else {
       res.status(200).json({
@@ -324,7 +433,7 @@ exports.getGigsFiles = async (req, res) => {
       res.status(200).json({
         statusCode: 200,
         message: "Success",
-        data: selectResult[0]
+        data: selectResult[0],
       });
     } else {
       res.status(200).json({
@@ -374,7 +483,6 @@ exports.editGigsFiles = async function (req, res) {
       statusCode: 200,
       message: "Gigs files Edited successfully",
     });
-
   } catch (error) {
     console.log("Error: ", error);
     return res.status(500).json({
@@ -388,9 +496,14 @@ exports.editGigsFiles = async function (req, res) {
 
 exports.editGigs = async function (req, res) {
   const { gigId } = req.params;
-  const { gigsTitle, category, subCategory, description, package = '' } = req.body;
+  const {
+    gigsTitle,
+    category,
+    subCategory,
+    description,
+    package = "",
+  } = req.body;
   try {
-
     if (gigsTitle && category && subCategory) {
       const insertGigsQuery = `UPDATE gigs SET title = ?, category = ?, subCategory = ? WHERE id = ? `;
       const insertGigsResult = await queryRunner(insertGigsQuery, [
@@ -409,39 +522,39 @@ exports.editGigs = async function (req, res) {
       ]);
     }
 
-      // const parsedPackages = JSON.parse(packages);
-      if(package){
-        for (const key of ["basic", "standard", "premium"]) {
-          const pkg = package[key];
-          if (!pkg) continue;
-          const {
-            packageType,
-            name,
-            description,
-            deliveryTime,
-            revisions,
-            price,
-            packages
-          } = pkg;
-          const queryParams = [
-            packageType,
-            name,
-            description,
-            deliveryTime,
-            revisions,
-            price,
-            packages,
-            gigId,
-            packageType
-          ];
-          await queryRunner(
-            `UPDATE packages SET packageType = ?, name = ?, description = ?, deliveryTime = ?, 
+    // const parsedPackages = JSON.parse(packages);
+    if (package) {
+      for (const key of ["basic", "standard", "premium"]) {
+        const pkg = package[key];
+        if (!pkg) continue;
+        const {
+          packageType,
+          name,
+          description,
+          deliveryTime,
+          revisions,
+          price,
+          packages,
+        } = pkg;
+        const queryParams = [
+          packageType,
+          name,
+          description,
+          deliveryTime,
+          revisions,
+          price,
+          packages,
+          gigId,
+          packageType,
+        ];
+        await queryRunner(
+          `UPDATE packages SET packageType = ?, name = ?, description = ?, deliveryTime = ?, 
              revisions = ?, price = ?, packages = ?
              WHERE gigID = ? AND packageType = ?`,
-            queryParams
-          );
-        }
+          queryParams
+        );
       }
+    }
 
     if (req.files && req.files?.length > 0) {
       for (const file of req.files) {
@@ -462,7 +575,6 @@ exports.editGigs = async function (req, res) {
       statusCode: 200,
       message: "Gigs Edited successfully",
     });
-
   } catch (error) {
     console.log("Error: ", error);
     return res.status(500).json({
@@ -473,7 +585,7 @@ exports.editGigs = async function (req, res) {
 };
 
 exports.checkDeleteFile = async (req, res) => {
-  const { fileKey } = req.body
+  const { fileKey } = req.body;
   try {
     await deleteS3File(fileKey);
   } catch (error) {

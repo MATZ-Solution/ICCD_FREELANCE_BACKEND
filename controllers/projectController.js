@@ -1,4 +1,5 @@
 const { queryRunner } = require("../helper/queryRunner");
+const { getTotalPage } = require("../helper/getTotalPage");
 
 exports.addProject = async function (req, res) {
   const { userId } = req.user;
@@ -17,33 +18,55 @@ exports.addProject = async function (req, res) {
     subCategory,
     title,
     total_freelancer,
-    type
+    type,
   } = req.body;
 
   try {
-
     // Add project into database
-    const formattedDeadline = new Date(deadline).toISOString().slice(0, 19).replace('T', ' ');
+    const formattedDeadline = new Date(deadline)
+      .toISOString()
+      .slice(0, 19)
+      .replace("T", " ");
     const insertProjectQuery = `INSERT INTO projects(title, budget,type, description, clientID, category, subCategory, deadline, duration, total_freelancer, freelancerType, overview, deliverable, mode) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?) `;
-    const values = [title, budget, type, description, userId, category, subCategory, formattedDeadline, duration, total_freelancer, freelancerType, overview, deliverable, mode]
+    const values = [
+      title,
+      budget,
+      type,
+      description,
+      userId,
+      category,
+      subCategory,
+      formattedDeadline,
+      duration,
+      total_freelancer,
+      freelancerType,
+      overview,
+      deliverable,
+      mode,
+    ];
     const insertFileResult = await queryRunner(insertProjectQuery, values);
 
-    const project_id = insertFileResult[0].insertId
-
+    const project_id = insertFileResult[0].insertId;
 
     if (skills && skills.length > 0) {
       for (const skill of skills) {
         const insertProjectQuery = `INSERT INTO project_skills( name, project_id) VALUES (?,?) `;
-        const queryParams = [skill, project_id]
-        const insertFileResult = await queryRunner(insertProjectQuery, queryParams);
+        const queryParams = [skill, project_id];
+        const insertFileResult = await queryRunner(
+          insertProjectQuery,
+          queryParams
+        );
       }
     }
 
     if (language && language.length > 0) {
       for (const i of language) {
         const insertProjectQuery = `INSERT INTO project_language( name, project_id) VALUES (?,?) `;
-        const queryParams = [i, project_id]
-        const insertFileResult = await queryRunner(insertProjectQuery, queryParams);
+        const queryParams = [i, project_id];
+        const insertFileResult = await queryRunner(
+          insertProjectQuery,
+          queryParams
+        );
       }
     }
 
@@ -84,39 +107,49 @@ exports.addProject = async function (req, res) {
 };
 
 exports.getProjectByClient = async (req, res) => {
-  const { search } = req.query
+  const { search, page = 1 } = req.query;
   const { userId } = req.user;
+  const limit = 10;
+  const offset = (page - 1) * limit;
+
   try {
+    let baseQuery = `
+      FROM projects p 
+      LEFT JOIN projectfiles pf ON pf.projectID = p.id
+      LEFT JOIN project_skills ps ON ps.project_id = p.id
+      LEFT JOIN project_proposals pp ON pp.projectId = p.id
+      WHERE p.clientID = ?
+    `;
+    let whereClause = "";
+    if (search) {
+      whereClause = `AND ( p.title LIKE '%${search}%' OR p.description LIKE '%${search}%' OR p.category LIKE '%${search}%' OR p.subCategory LIKE '%${search}%' ) `;
+    }
+
     let getProjectQuery = `
     SELECT  p.*, GROUP_CONCAT(pf.fileUrl) AS projectFiles, GROUP_CONCAT(ps.name) AS projectSkills,
     COUNT(DISTINCT pp.id) AS totalProposals
-    FROM projects p 
-    LEFT JOIN projectfiles pf ON pf.projectID = p.id
-    LEFT JOIN project_skills ps ON ps.project_id = p.id
-    LEFT JOIN project_proposals pp ON pp.projectId = p.id
-    WHERE p.clientID = ?
+    ${baseQuery}
+    ${whereClause}
+     GROUP BY p.id
+     LIMIT ${limit} OFFSET ${offset}
     `;
 
-    if (search) {
-      getProjectQuery += ` AND ( p.title LIKE '%${search}%' OR p.description LIKE '%${search}%' OR p.category LIKE '%${search}%' OR p.subCategory LIKE '%${search}%' )`;
-    }
-
-    getProjectQuery += ` GROUP BY p.id `;
-
     const selectResult = await queryRunner(getProjectQuery, [userId]);
-
     const filterData = selectResult[0].map((item) => ({
       ...item,
-      projectSkills: item.projectSkills ? item.projectSkills.split(',') : [],
-      projectFiles: item.projectFiles ? item.projectFiles.split(',')[0] : []
-    }))
+      projectSkills: item.projectSkills ? item.projectSkills.split(",") : [],
+      projectFiles: item.projectFiles ? item.projectFiles.split(",")[0] : [],
+    }));
 
     if (selectResult[0].length > 0) {
+      const countQuery = ` SELECT COUNT(DISTINCT p.id) AS total ${baseQuery} ${whereClause} `;
+      const totalPages = await getTotalPage(countQuery, limit, [userId]);
       res.status(200).json({
         statusCode: 200,
         message: "Success",
         // data: selectResult[0]
-        data: filterData
+        data: filterData,
+        totalPages
       });
     } else {
       res.status(200).json({
@@ -135,27 +168,37 @@ exports.getProjectByClient = async (req, res) => {
 };
 
 exports.getAllProject = async (req, res) => {
-  const { search } = req.query
+  const { search, page = 1 } = req.query;
+  const limit = 10;
+  const offset = (page - 1) * limit;
+
   try {
-    let getProjectQuery = `SELECT * FROM projects `;
+    let baseQuery = ` FROM projects `;
+
+    let whereClause = "";
     if (search) {
-      getProjectQuery += ` WHERE title LIKE '%${search}%' OR description LIKE '%${search}%' OR category LIKE '%${search}%' OR subCategory LIKE '%${search}%' `;
+      whereClause += ` WHERE title LIKE '%${search}%' OR description LIKE '%${search}%' OR category LIKE '%${search}%' OR subCategory LIKE '%${search}%' `;
     }
+
+    let getProjectQuery = `SELECT *  ${baseQuery} ${whereClause} LIMIT ${limit} OFFSET ${offset}`;
 
     const selectResult = await queryRunner(getProjectQuery);
 
     const filterData = selectResult[0].map((item) => ({
       ...item,
-      projectSkills: item.projectSkills ? item.projectSkills.split(',') : [],
-      projectFiles: item.projectFiles ? item.projectFiles.split(',')[0] : []
-    }))
+      projectSkills: item.projectSkills ? item.projectSkills.split(",") : [],
+      projectFiles: item.projectFiles ? item.projectFiles.split(",")[0] : [],
+    }));
 
     if (selectResult[0].length > 0) {
+      const countQuery = ` SELECT COUNT(DISTINCT id) AS total ${baseQuery} ${whereClause} `;
+      const totalPages = await getTotalPage(countQuery, limit);
       res.status(200).json({
         statusCode: 200,
         message: "Success",
         // data: selectResult[0]
-        data: filterData
+        data: filterData,
+        totalPages
       });
     } else {
       res.status(200).json({
@@ -191,7 +234,7 @@ exports.getProjectById = async (req, res) => {
       res.status(200).json({
         statusCode: 200,
         message: "Success",
-        data: selectResult[0]
+        data: selectResult[0],
       });
     } else {
       res.status(200).json({
@@ -211,7 +254,7 @@ exports.getProjectById = async (req, res) => {
 
 exports.getProjectProposalsByClient = async (req, res) => {
   const { projectId } = req.params;
-  const { userId } = req.user
+  const { userId } = req.user;
   try {
     const getProjectQuery = `
     SELECT  pp.*,
@@ -221,13 +264,16 @@ exports.getProjectProposalsByClient = async (req, res) => {
     LEFT JOIN freelancers f ON f.id = pp.freelancerId
     WHERE pp.clientId = ? AND pp.projectId = ?
      `;
-    const selectResult = await queryRunner(getProjectQuery, [userId, projectId]);
+    const selectResult = await queryRunner(getProjectQuery, [
+      userId,
+      projectId,
+    ]);
 
     if (selectResult[0].length > 0) {
       res.status(200).json({
         statusCode: 200,
         message: "Success",
-        data: selectResult[0]
+        data: selectResult[0],
       });
     } else {
       res.status(200).json({
@@ -247,12 +293,20 @@ exports.getProjectProposalsByClient = async (req, res) => {
 
 exports.applyProject = async function (req, res) {
   const { name, experience, clientId, projectId, freelancerId } = req.body;
-  const files = req.files
+  const files = req.files;
 
   try {
     // Add project_proposals into database
     const insertProposalsQuery = `INSERT INTO project_proposals(name, experience, projectId, clientId, freelancerId, fileUrl, fileKey) VALUES (?,?,?,?,?,?,?) `;
-    const values = [name, experience, projectId, clientId, freelancerId, files[0].location, files[0].key]
+    const values = [
+      name,
+      experience,
+      projectId,
+      clientId,
+      freelancerId,
+      files[0].location,
+      files[0].key,
+    ];
     const insertFileResult = await queryRunner(insertProposalsQuery, values);
 
     if (insertFileResult[0].affectedRows > 0) {
@@ -266,7 +320,6 @@ exports.applyProject = async function (req, res) {
         message: "Failed to add Project",
       });
     }
-
   } catch (error) {
     console.log("Error: ", error);
     return res.status(500).json({
@@ -295,7 +348,7 @@ exports.editProject = async function (req, res) {
     subCategory,
     title,
     total_freelancer,
-    type
+    type,
   } = req.body;
 
   try {
@@ -307,20 +360,35 @@ exports.editProject = async function (req, res) {
         overview = ?, deliverable = ?, mode = ? 
       WHERE id = ? AND clientID = ?`;
 
-    const formattedDeadline = new Date(deadline).toISOString().slice(0, 19).replace('T', ' ');
+    const formattedDeadline = new Date(deadline)
+      .toISOString()
+      .slice(0, 19)
+      .replace("T", " ");
 
     const values = [
-      title, budget, type, description,
-      category, subCategory, formattedDeadline,
-      duration, total_freelancer, freelancerType,
-      overview, deliverable, mode,
-      id, userId
+      title,
+      budget,
+      type,
+      description,
+      category,
+      subCategory,
+      formattedDeadline,
+      duration,
+      total_freelancer,
+      freelancerType,
+      overview,
+      deliverable,
+      mode,
+      id,
+      userId,
     ];
 
     const updateResult = await queryRunner(editProjectQuery, values);
 
     if (updateResult.affectedRows === 0) {
-      return res.status(404).json({ message: "Project not found or unauthorized" });
+      return res
+        .status(404)
+        .json({ message: "Project not found or unauthorized" });
     }
 
     await queryRunner("DELETE FROM project_skills WHERE project_id = ?", [id]);
@@ -333,7 +401,9 @@ exports.editProject = async function (req, res) {
       }
     }
 
-    await queryRunner("DELETE FROM project_language WHERE project_id = ?", [id]);
+    await queryRunner("DELETE FROM project_language WHERE project_id = ?", [
+      id,
+    ]);
     if (Array.isArray(language) && language.length > 0) {
       for (const lang of language) {
         await queryRunner(
@@ -364,7 +434,6 @@ exports.editProject = async function (req, res) {
       statusCode: 200,
       message: "Project updated successfully",
     });
-
   } catch (error) {
     console.error("Edit Project Error:", error);
     return res.status(500).json({
@@ -372,4 +441,3 @@ exports.editProject = async function (req, res) {
     });
   }
 };
-
