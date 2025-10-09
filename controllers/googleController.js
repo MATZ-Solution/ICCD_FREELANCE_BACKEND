@@ -8,10 +8,10 @@ exports.googleLogin = passport.authenticate("google", { scope: ["profile", "emai
 exports.googleCallback = (req, res, next) => {
   passport.authenticate("google", { session: false }, (err, data) => {
     if (err || !data) {
-      return res.redirect(`https://iccd.freelance.matzsolutions.com/login?error=google_auth_failed`);
+      return res.redirect(`https://iccdtalentgate.com/login?error=google_auth_failed`);
     }
 
-    const FRONTEND_URL = "https://iccd.freelance.matzsolutions.com/google-callback";
+    const FRONTEND_URL = "https://iccdtalentgate.com/google-callback";
     res.redirect(`${FRONTEND_URL}?token=${data.token}`);
   })(req, res, next);
 };
