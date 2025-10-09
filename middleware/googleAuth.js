@@ -8,7 +8,7 @@ passport.use(
     {
       clientID: '205822955997-9tb041db0e8rlh68h7cijana4sepk3oc.apps.googleusercontent.com',
       clientSecret: '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',
-      callbackURL: 'http://localhost:22306/auth/google/callback',
+      callbackURL: 'https://iccd.freelanceserver.matzsolutions.com/auth/google/callback',
     },
     async function (accessToken, refreshToken, profile, done) {
       try {
