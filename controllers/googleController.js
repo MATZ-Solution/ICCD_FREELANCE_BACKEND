@@ -3,7 +3,7 @@ const passport = require("../middleware/googleAuth");
 // Redirect to Google for login
 exports.googleLogin = passport.authenticate("google", { scope: ["profile", "email"] });
 
-
+//hello
 
 exports.googleCallback = (req, res, next) => {
   passport.authenticate("google", { session: false }, (err, data) => {
