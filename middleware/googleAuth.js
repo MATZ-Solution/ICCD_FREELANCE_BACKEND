@@ -33,7 +33,7 @@ passport.use(
           userId = userResult[0][0].id;
         }
 
-        const token = jwt.sign({ userId, email }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        const token = jwt.sign({ userId, email }, '1dikjsaciwndvc', { expiresIn: '7d' });
 
         return done(null, { token, user: { id: userId, name, email } });
       } catch (err) {
