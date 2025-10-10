@@ -10,39 +10,39 @@ passport.use(
       clientSecret: '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',
       callbackURL: 'https://iccd.freelanceserver.matzsolutions.com/auth/google/callback',
     },
-    async function (accessToken, refreshToken, profile, done) {
+   async (accessToken, refreshToken, profile, done) => {
       try {
-        const email = profile.emails[0].value;
-        const name = profile.displayName;
+        console.log('Google profile:', profile);
+        const email =
+          profile.emails && profile.emails.length > 0 ? profile.emails[0].value : null;
 
-        // Check if user exists
+        if (!email) {
+          throw new Error('No email returned by Google');
+        }
+
+        const name = profile.displayName;
         const selectQuery = `SELECT * FROM users WHERE email = ?`;
         const userResult = await queryRunner(selectQuery, [email]);
 
         let userId;
         if (userResult[0].length === 0) {
-          // User does not exist → insert
           const insertQuery = `INSERT INTO users(name, email, password) VALUES (?, ?, ?)`;
-          const insertResult = await queryRunner(insertQuery, [
-            name,
-            email,
-            null, // password null for Google auth
-          ]);
+          const insertResult = await queryRunner(insertQuery, [name, email, null]);
           userId = insertResult[0].insertId;
         } else {
           userId = userResult[0][0].id;
         }
 
-        // Generate JWT token
-        const token = jwt.sign({ userId, email }, '1dikjsaciwndvc', {
-          expiresIn: "7d",
-        });
+        const token = jwt.sign({ userId, email }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
         return done(null, { token, user: { id: userId, name, email } });
       } catch (err) {
+        console.error('Google Strategy Error:', err);
         return done(err, null);
       }
     }
+  )
+);
   )
 );
 
