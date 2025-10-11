@@ -15,5 +15,7 @@ router.post("/applyJob" ,verifyToken, s3Upload.array('files', 1), jobController.
 
 router.put("/editJob/:id" ,verifyToken, jobController.editJob);
 router.put("/closeJob/:id" ,verifyToken, jobController.closeJob);
+router.put("/jobProposalAction" ,verifyToken, jobController.jobProposalsAction);
+
 
 module.exports = router;
