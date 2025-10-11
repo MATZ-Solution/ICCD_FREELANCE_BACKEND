@@ -91,7 +91,8 @@ exports.closeJob = async function (req, res) {
 };
 
 exports.jobProposalsAction = async function (req, res) {
-  const { id, name, email, action } = req.query;
+  const { id, name, email, action } = req.body;
+  console.log(req.body)
   try {
     if (action === "accept") {
       const template = emailTemplates.jobAccepted
