@@ -97,7 +97,7 @@ exports.jobProposalsAction = async function (req, res) {
       const template = emailTemplates.jobAccepted
       const subject = template.subject
       const htmlContent = template.html(name);
-      const updateQuery = `UPDATE job_proposals status = ? WHERE id = ?`;
+      const updateQuery = `UPDATE job_proposals SET status = ? WHERE id = ?`;
       const queryParams = ["selected", id];
       const result = await queryRunner(updateQuery, queryParams);
       if (result?.[0]?.affectedRows > 0) {
@@ -113,7 +113,7 @@ exports.jobProposalsAction = async function (req, res) {
         });
       }
     } else {
-      const updateQuery = `UPDATE job_proposals status = ? WHERE id = ?`;
+      const updateQuery = `UPDATE job_proposals SET status = ? WHERE id = ?`;
       const queryParams = ["not selected", id];
       const result = await queryRunner(updateQuery, queryParams);
       if (result?.[0]?.affectedRows > 0) {
@@ -342,14 +342,15 @@ exports.getJobByClient = async (req, res) => {
 
 exports.applyJob = async function (req, res) {
   const { userId } = req.user;
-  const { name, experience, freelancerId, projectId, clientId } = req.body;
+  const { name, email, experience, freelancerId, projectId, clientId } = req.body;
   const files = req.files;
 
   try {
     // Add job_proposals into database
-    const insertProposalsQuery = `INSERT INTO job_proposals(name, experience, status, jobId, clientId, freelancerId, fileUrl, fileKey) VALUES (?,?,?,?,?,?,?,?) `;
+    const insertProposalsQuery = `INSERT INTO job_proposals(name, email, experience, status, jobId, clientId, freelancerId, fileUrl, fileKey) VALUES (?,?,?,?,?,?,?,?,?) `;
     const values = [
       name,
+      email,
       experience,
       "awaiting response",
       projectId,
@@ -385,7 +386,7 @@ exports.getJobProposalsByClient = async (req, res) => {
   const { id } = req.query;
   try {
     const getJobQuery = `
-    SELECT  jp.experience, jp.fileUrl,
+    SELECT  jp.id, jp.email, jp.experience, jp.fileUrl,
     f.id AS freelancerId, CONCAT(f.firstName, ' ', f.lastName) AS freelancerName,
     f.fileUrl as candidateImg
     FROM job_proposals jp
