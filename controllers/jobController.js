@@ -2,6 +2,7 @@ const { queryRunner } = require("../helper/queryRunner");
 const handleNotifications = require("../utils/sendnotification");
 const { getTotalPage } = require("../helper/getTotalPage");
 const { emailTemplates } = require("../utils/emailTemplates");
+const { sendEmail } = require("../helper/emailService")
 
 exports.addJob = async function (req, res) {
   const { userId } = req.user;
@@ -91,7 +92,7 @@ exports.closeJob = async function (req, res) {
 };
 
 exports.jobProposalsAction = async function (req, res) {
-  const { id, name, email, action } = req.query;
+  const { id, name, email, action } = req.body;
   try {
     if (action === "accept") {
       const template = emailTemplates.jobAccepted
@@ -386,7 +387,7 @@ exports.getJobProposalsByClient = async (req, res) => {
   const { id } = req.query;
   try {
     const getJobQuery = `
-    SELECT  jp.id, jp.email, jp.experience, jp.fileUrl,
+    SELECT  jp.id, jp.email, jp.status, jp.experience, jp.fileUrl,
     f.id AS freelancerId, CONCAT(f.firstName, ' ', f.lastName) AS freelancerName,
     f.fileUrl as candidateImg
     FROM job_proposals jp
