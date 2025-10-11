@@ -18,12 +18,10 @@ const emailTemplates = {
       <div style="font-family: Arial, sans-serif; color: #333;">
         <h2 style="color: #f44336;">Application Update</h2>
         <p>Dear ${candidateName},</p>
-        <p>Thank you for applying to <strong>${companyName}</strong>.</p>
         <p>After careful consideration, we regret to inform you that you were not selected for this position.</p>
         <p>We truly appreciate your interest and encourage you to apply for future opportunities.</p>
         <br>
         <p>Wishing you success ahead,</p>
-        <p><strong>${companyName} Recruitment Team</strong></p>
       </div>
     `
   }
