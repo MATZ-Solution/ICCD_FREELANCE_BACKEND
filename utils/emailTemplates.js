@@ -5,7 +5,6 @@ const emailTemplates = {
     html: (candidateName) => `
       <div style="font-family: Arial, sans-serif; color: #333;">
         <h2 style="color: #4CAF50;">Congratulations, ${candidateName}!</h2>
-        <p>We are pleased to inform you that you have been <strong>selected</strong> for the next stage of our recruitment process at <strong>${companyName}</strong>.</p>
         <p>Our team was impressed with your profile and we’re excited to move forward with you.</p>
         <p>You’ll receive further details about the next steps soon.</p>
         <br>
