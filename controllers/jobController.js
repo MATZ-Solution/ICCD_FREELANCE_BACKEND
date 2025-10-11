@@ -10,7 +10,8 @@ exports.addJob = async function (req, res) {
   const {
     jobTitle,
     jobType,
-    joblocation,
+    country,
+    city,
     payType,
     minSalaray,
     maxSalaray,
@@ -20,11 +21,12 @@ exports.addJob = async function (req, res) {
 
   try {
     // Add job into database
-    const insertProjectQuery = `INSERT INTO jobs( jobTitle, jobType, joblocation, payType, minSalaray, maxSalaray, jobDescription, totalPersontoHire, status, clientID) VALUES (?,?,?,?,?,?,?,?,?,?) `;
+    const insertProjectQuery = `INSERT INTO jobs( jobTitle, jobType, country, city, payType, minSalaray, maxSalaray, jobDescription, totalPersontoHire, status, clientID) VALUES (?,?,?,?,?,?,?,?,?,?,?) `;
     const queryParams = [
       jobTitle,
       jobType,
-      joblocation,
+      country,
+      city,
       payType,
       minSalaray,
       maxSalaray,
@@ -145,7 +147,8 @@ exports.editJob = async function (req, res) {
   const {
     jobTitle,
     jobType,
-    joblocation,
+    country,
+    city,
     payType,
     minSalaray,
     maxSalaray,
@@ -159,7 +162,8 @@ exports.editJob = async function (req, res) {
       SET 
         jobTitle = ?, 
         jobType = ?, 
-        joblocation = ?, 
+        country = ?, 
+        city = ?,
         payType = ?, 
         minSalaray = ?, 
         maxSalaray = ?, 
@@ -171,7 +175,8 @@ exports.editJob = async function (req, res) {
     const queryParams = [
       jobTitle,
       jobType,
-      joblocation,
+      country,
+      city,
       payType,
       minSalaray,
       maxSalaray,
