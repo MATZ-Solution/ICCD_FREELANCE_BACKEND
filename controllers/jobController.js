@@ -209,31 +209,30 @@ exports.editJob = async function (req, res) {
 };
 
 exports.getAllJob = async (req, res) => {
-  const { jobTitle, jobType, joblocation, page = 1 } = req.query;
+  const { jobTitle, type, country, page = 1 } = req.query;
+  console.log("request query: ", req.query)
   const limit = 10;
   const offset = (page - 1) * limit;
   try {
     let baseQuery = `
       FROM jobs j LEFT JOIN users u ON u.id = j.clientID 
     `;
-    const queryParams = [];
-    const queryValue = [];
-    const whereClause = "";
+    let whereCond = [];
+    let whereClause = "";
 
     if (jobTitle) {
-      queryParams.push(` j.jobTitle LIKE ? `);
-      queryValue.push(`%${jobTitle}%`);
+      whereCond.push(` ( j.jobTitle LIKE '%${jobTitle}%' ) `);
     }
-    if (jobType) {
-      queryParams.push(` j.jobType LIKE ? `);
-      queryValue.push(`%${jobType}%`);
+    if (type) {
+      whereCond.push(` ( j.jobType LIKE '%${type}%' ) `);
     }
-    if (joblocation) {
-      queryParams.push(` j.joblocation LIKE ? `);
-      queryValue.push(`%${joblocation}%`);
+    if (country) {
+      whereCond.push(` ( j.country LIKE '%${country}%' ) `);
     }
-    if (queryParams.length > 0) {
-      whereClause += "WHERE" + ` ${queryParams.join(" AND ")} `;
+
+    if (whereCond.length > 0) {
+      let concat_whereCond = whereCond.join(" AND ")
+      whereClause += "WHERE" + ` ${concat_whereCond} `;
     }
 
     let getProjectQuery = `SELECT j.*, u.name 
@@ -242,10 +241,10 @@ exports.getAllJob = async (req, res) => {
      LIMIT ${limit} OFFSET ${offset}
     `;
 
-    const selectResult = await queryRunner(getProjectQuery, queryValue);
-    const countQuery = ` SELECT COUNT(DISTINCT j.id) AS total ${baseQuery} ${whereClause} `;
-    const totalPages = await getTotalPage(countQuery, limit);
+    const selectResult = await queryRunner(getProjectQuery);
     if (selectResult[0].length > 0) {
+      const countQuery = ` SELECT COUNT(DISTINCT j.id) AS total ${baseQuery} ${whereClause} `;
+      const totalPages = await getTotalPage(countQuery, limit);
       res.status(200).json({
         statusCode: 200,
         message: "Success",
