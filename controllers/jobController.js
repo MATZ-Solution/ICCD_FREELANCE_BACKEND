@@ -1,6 +1,7 @@
 const { queryRunner } = require("../helper/queryRunner");
 const handleNotifications = require("../utils/sendnotification");
 const { getTotalPage } = require("../helper/getTotalPage");
+const { emailTemplates } = require("../utils/emailTemplates");
 
 exports.addJob = async function (req, res) {
   const { userId } = req.user;
@@ -18,7 +19,7 @@ exports.addJob = async function (req, res) {
 
   try {
     // Add job into database
-    const insertProjectQuery = `INSERT INTO jobs( jobTitle, jobType, joblocation, payType, minSalaray, maxSalaray, jobDescription, totalPersontoHire, clientID) VALUES (?,?,?,?,?,?,?,?,?) `;
+    const insertProjectQuery = `INSERT INTO jobs( jobTitle, jobType, joblocation, payType, minSalaray, maxSalaray, jobDescription, totalPersontoHire, status, clientID) VALUES (?,?,?,?,?,?,?,?,?,?) `;
     const queryParams = [
       jobTitle,
       jobType,
@@ -28,6 +29,7 @@ exports.addJob = async function (req, res) {
       maxSalaray,
       jobDescription,
       totalPersontoHire,
+      "open",
       userId,
     ];
     const insertFileResult = await queryRunner(insertProjectQuery, queryParams);
@@ -57,6 +59,81 @@ exports.addJob = async function (req, res) {
     return res.status(500).json({
       message: "Failed to add job",
       message: error.message,
+    });
+  }
+};
+
+exports.closeJob = async function (req, res) {
+  const { id } = req.params;
+  try {
+    const updateQuery = `UPDATE jobs status = ? WHERE id = ?`;
+    const queryParams = ["closed", id];
+    const result = await queryRunner(updateQuery, queryParams);
+    if (result?.[0]?.affectedRows > 0) {
+      return res.status(200).json({
+        statusCode: 200,
+        message: "Job closed successfully.",
+      });
+    } else {
+      return res.status(404).json({
+        statusCode: 404,
+        message: "No job found with the given ID.",
+      });
+    }
+  } catch (error) {
+    console.error("Edit Job Error:", error);
+    return res.status(500).json({
+      statusCode: 500,
+      message: "Failed to closed job",
+      error: error.message,
+    });
+  }
+};
+
+exports.jobProposalsAction = async function (req, res) {
+  const { id, name, email, action } = req.query;
+  try {
+    if (action === "accept") {
+      const template = emailTemplates.jobAccepted
+      const subject = template.subject
+      const htmlContent = template.html(name);
+      const updateQuery = `UPDATE job_proposals status = ? WHERE id = ?`;
+      const queryParams = ["selected", id];
+      const result = await queryRunner(updateQuery, queryParams);
+      if (result?.[0]?.affectedRows > 0) {
+        sendEmail(email, subject, htmlContent)
+        return res.status(200).json({
+          statusCode: 200,
+          message: "Status updated successfully.",
+        });
+      } else {
+        return res.status(404).json({
+          statusCode: 404,
+          message: "No proposals found with the given ID.",
+        });
+      }
+    } else {
+      const updateQuery = `UPDATE job_proposals status = ? WHERE id = ?`;
+      const queryParams = ["not selected", id];
+      const result = await queryRunner(updateQuery, queryParams);
+      if (result?.[0]?.affectedRows > 0) {
+        return res.status(200).json({
+          statusCode: 200,
+          message: "Status updated successfully.",
+        });
+      } else {
+        return res.status(404).json({
+          statusCode: 404,
+          message: "No proposals found with the given ID.",
+        });
+      }
+    }
+  } catch (error) {
+    console.error("Edit Job Error:", error);
+    return res.status(500).json({
+      statusCode: 500,
+      message: "Failed to closed job",
+      error: error.message,
     });
   }
 };
@@ -135,8 +212,8 @@ exports.getAllJob = async (req, res) => {
     `;
     const queryParams = [];
     const queryValue = [];
-    const whereClause = ""
-    
+    const whereClause = "";
+
     if (jobTitle) {
       queryParams.push(` j.jobTitle LIKE ? `);
       queryValue.push(`%${jobTitle}%`);
@@ -167,7 +244,7 @@ exports.getAllJob = async (req, res) => {
         statusCode: 200,
         message: "Success",
         data: selectResult[0],
-        totalPages
+        totalPages,
       });
     } else {
       res.status(200).json({
@@ -270,10 +347,11 @@ exports.applyJob = async function (req, res) {
 
   try {
     // Add job_proposals into database
-    const insertProposalsQuery = `INSERT INTO job_proposals(name, experience, jobId, clientId, freelancerId, fileUrl, fileKey) VALUES (?,?,?,?,?,?,?) `;
+    const insertProposalsQuery = `INSERT INTO job_proposals(name, experience, status, jobId, clientId, freelancerId, fileUrl, fileKey) VALUES (?,?,?,?,?,?,?,?) `;
     const values = [
       name,
       experience,
+      "awaiting response",
       projectId,
       clientId,
       freelancerId,
