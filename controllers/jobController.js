@@ -66,7 +66,7 @@ exports.addJob = async function (req, res) {
 exports.closeJob = async function (req, res) {
   const { id } = req.params;
   try {
-    const updateQuery = `UPDATE jobs status = ? WHERE id = ?`;
+    const updateQuery = `UPDATE jobs SET status = ? WHERE id = ?`;
     const queryParams = ["closed", id];
     const result = await queryRunner(updateQuery, queryParams);
     if (result?.[0]?.affectedRows > 0) {
