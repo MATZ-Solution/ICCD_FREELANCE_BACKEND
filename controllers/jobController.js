@@ -209,7 +209,7 @@ exports.editJob = async function (req, res) {
 };
 
 exports.getAllJob = async (req, res) => {
-  const { jobTitle, type, country, page = 1 } = req.query;
+  const { jobTitle, type, country, city, page = 1 } = req.query;
   console.log("request query: ", req.query)
   const limit = 10;
   const offset = (page - 1) * limit;
@@ -228,6 +228,9 @@ exports.getAllJob = async (req, res) => {
     }
     if (country) {
       whereCond.push(` ( j.country LIKE '%${country}%' ) `);
+    }
+     if (city) {
+      whereCond.push(` ( j.city LIKE '%${city}%' ) `);
     }
 
     if (whereCond.length > 0) {
