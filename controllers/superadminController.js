@@ -137,13 +137,20 @@ exports.getAllJob = async (req, res) => {
     if (selectResult[0].length > 0) {
       const countQuery = ` SELECT COUNT(DISTINCT j.id) AS total ${baseQuery} ${whereClause} `;
       const totalPages = await getTotalPage(countQuery, limit);
-      const activeJobQuery = `SELECT COUNT(DISTINCT id) as active_jobs FROM jobs WHERE status != 'closed'`
+    const activeJobQuery = `
+      SELECT 
+        (SELECT COUNT(DISTINCT id) FROM jobs WHERE status = 'open') AS active_jobs,
+        (SELECT COUNT(DISTINCT id) FROM jobs) AS total_jobs
+    `;
+
       const activeJobResult = await queryRunner(activeJobQuery);
+
       res.status(200).json({
         statusCode: 200,
         message: "Success",
         data: selectResult[0],
         active_jobs: activeJobResult[0][0].active_jobs,
+        total_jobs: activeJobResult[0][0].total_jobs,
         totalPages,
       });
     } else {
