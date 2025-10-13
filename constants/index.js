@@ -9,5 +9,5 @@ exports.REFRESH_TOKEN='1//04H5awHGWQ5bdCgYIARAAGAQSNwF-L9IrgnTfdc5ha22qNzrLtyz8u
 
 GOOGLE_CLIENT_ID='205822955997-9tb041db0e8rlh68h7cijana4sepk3oc.apps.googleusercontent.com'
 GOOGLE_CLIENT_SECRET='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'
-GOOGLE_CALLBACK_URL='http://localhost:22306/auth/google/callback'
+GOOGLE_CALLBACK_URL='https://iccdtalentgate.com/auth/google/callback'
 JWT_SECRET='1dikjsaciwndvc'
