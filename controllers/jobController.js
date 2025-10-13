@@ -2,7 +2,7 @@ const { queryRunner } = require("../helper/queryRunner");
 const handleNotifications = require("../utils/sendnotification");
 const { getTotalPage } = require("../helper/getTotalPage");
 const { emailTemplates } = require("../utils/emailTemplates");
-const { sendEmail } = require("../helper/emailService")
+const { sendEmail } = require("../helper/emailService");
 
 exports.addJob = async function (req, res) {
   const { userId } = req.user;
@@ -21,7 +21,7 @@ exports.addJob = async function (req, res) {
 
   try {
     // Add job into database
-    const insertProjectQuery = `INSERT INTO jobs( jobTitle, jobType, country, city, payType, minSalaray, maxSalaray, jobDescription, totalPersontoHire, status, clientID) VALUES (?,?,?,?,?,?,?,?,?,?,?) `;
+    const insertProjectQuery = `INSERT INTO jobs( jobTitle, jobType, country, city, payType, minSalaray, maxSalaray, jobDescription, totalPersontoHire, remaining_position, status, clientID) VALUES (?,?,?,?,?,?,?,?,?,?,?,?) `;
     const queryParams = [
       jobTitle,
       jobType,
@@ -31,6 +31,7 @@ exports.addJob = async function (req, res) {
       minSalaray,
       maxSalaray,
       jobDescription,
+      totalPersontoHire,
       totalPersontoHire,
       "open",
       userId,
@@ -94,48 +95,81 @@ exports.closeJob = async function (req, res) {
 };
 
 exports.jobProposalsAction = async function (req, res) {
-  const { id, name, email, action } = req.body;
+  const { id, name, email, action, remaining_position, jobId } = req.body;
+
+  if (!id || !action) {
+    return res.status(400).json({
+      statusCode: 400,
+      message: "Missing required parameters.",
+    });
+  }
+
   try {
+    // If proposal accepted
     if (action === "accept") {
-      const template = emailTemplates.jobAccepted
-      const subject = template.subject
-      const htmlContent = template.html(name);
-      const updateQuery = `UPDATE job_proposals SET status = ? WHERE id = ?`;
-      const queryParams = ["selected", id];
-      const result = await queryRunner(updateQuery, queryParams);
-      if (result?.[0]?.affectedRows > 0) {
-        sendEmail(email, subject, htmlContent)
-        return res.status(200).json({
-          statusCode: 200,
-          message: "Status updated successfully.",
-        });
-      } else {
-        return res.status(404).json({
-          statusCode: 404,
-          message: "No proposals found with the given ID.",
+      if (remaining_position <= 0) {
+        return res.status(400).json({
+          statusCode: 400,
+          message: "No open positions available for this job.",
         });
       }
-    } else {
-      const updateQuery = `UPDATE job_proposals SET status = ? WHERE id = ?`;
-      const queryParams = ["not selected", id];
-      const result = await queryRunner(updateQuery, queryParams);
-      if (result?.[0]?.affectedRows > 0) {
+
+      const updatePosition = remaining_position - 1;
+      const { subject, html } = emailTemplates.jobAccepted;
+
+      const [updateJob, updateProposal] = await Promise.all([
+        queryRunner(
+          `UPDATE jobs SET remaining_position = ? WHERE id = ?`,
+          [updatePosition, jobId]
+        ),
+        queryRunner(
+          `UPDATE job_proposals SET status = ? WHERE id = ?`,
+          ["selected", id]
+        ),
+      ]);
+
+      const jobUpdated = updateJob?.[0]?.affectedRows > 0;
+      const proposalUpdated = updateProposal?.[0]?.affectedRows > 0;
+
+      if (jobUpdated && proposalUpdated) {
+        await sendEmail(email, subject, html(name)); // send email after success
+
         return res.status(200).json({
           statusCode: 200,
-          message: "Status updated successfully.",
+          message: "Proposal accepted and applicant notified.",
         });
       } else {
         return res.status(404).json({
           statusCode: 404,
-          message: "No proposals found with the given ID.",
+          message: "Failed to update job or proposal record.",
         });
       }
     }
+
+    // If proposal rejected
+    const [result] = await queryRunner(
+      `UPDATE job_proposals SET status = ? WHERE id = ?`,
+      ["not selected", id]
+    );
+
+    if (result?.affectedRows > 0) {
+      return res.status(200).json({
+        statusCode: 200,
+        message: "Proposal marked as not selected.",
+      });
+    }
+
+    // Default: No records found
+    return res.status(404).json({
+      statusCode: 404,
+      message: "No proposals found with the given ID.",
+    });
+
   } catch (error) {
-    console.error("Edit Job Error:", error);
+    console.error("Job Proposal Action Error:", error);
     return res.status(500).json({
       statusCode: 500,
-      message: "Failed to closed job",
+      message: "Failed to update job proposal status.",
       error: error.message,
     });
   }
@@ -210,7 +244,7 @@ exports.editJob = async function (req, res) {
 
 exports.getAllJob = async (req, res) => {
   const { jobTitle, type, country, city, page = 1 } = req.query;
-  console.log("request query: ", req.query)
+  console.log("request query: ", req.query);
   const limit = 10;
   const offset = (page - 1) * limit;
   try {
@@ -229,12 +263,12 @@ exports.getAllJob = async (req, res) => {
     if (country) {
       whereCond.push(` ( j.country LIKE '%${country}%' ) `);
     }
-     if (city) {
+    if (city) {
       whereCond.push(` ( j.city LIKE '%${city}%' ) `);
     }
 
     if (whereCond.length > 0) {
-      let concat_whereCond = whereCond.join(" AND ")
+      let concat_whereCond = whereCond.join(" AND ");
       whereClause += "WHERE" + ` ${concat_whereCond} `;
     }
 
@@ -269,8 +303,6 @@ exports.getAllJob = async (req, res) => {
     });
   }
 };
-
-
 
 exports.getJobById = async (req, res) => {
   const { id } = req.params;
@@ -352,7 +384,8 @@ exports.getJobByClient = async (req, res) => {
 
 exports.applyJob = async function (req, res) {
   const { userId } = req.user;
-  const { name, email, experience, freelancerId, projectId, clientId } = req.body;
+  const { name, email, experience, freelancerId, projectId, clientId } =
+    req.body;
   const files = req.files;
 
   try {
