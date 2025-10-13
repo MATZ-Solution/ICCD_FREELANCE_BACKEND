@@ -12,6 +12,6 @@ router.get("/getAllOrder", getAllOrderByAdmin);
 router.get("/getAllFreelancers", superadminController.getAllFreelancers);
 router.get("/getAllGigs", superadminController.getAllGigs);
 router.get("/getAllProjects", superadminController.getAllProjects);
-
+router.get("/getAllJobs", superadminController.getAllJob);
 
 module.exports = router;

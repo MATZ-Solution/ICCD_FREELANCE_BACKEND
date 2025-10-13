@@ -270,6 +270,8 @@ exports.getAllJob = async (req, res) => {
   }
 };
 
+
+
 exports.getJobById = async (req, res) => {
   const { id } = req.params;
   try {
