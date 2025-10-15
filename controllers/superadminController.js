@@ -2,21 +2,41 @@ const { queryRunner } = require("../helper/queryRunner");
 const handleNotifications = require("../utils/sendnotification");
 const { getTotalPage } = require("../helper/getTotalPage");
 
-exports.getAllUsers = async function (req, res) {
-  try {
-    const sql = "SELECT * FROM users";
-    const [rows] = await queryRunner(sql);
+exports.getAllUsers = async (req, res) => {
+  const { search, page = 1 } = req.query;
+  const limit = 10;
+  const offset = (page - 1) * limit;
 
-    res.status(200).json({
-      success: true,
-      count: rows.length,
-      data: rows,
-    });
+  try {
+    let baseQuery = ` FROM users `;
+    let whereClause = "";
+    if (search) {
+      whereClause += ` WHERE name LIKE '%${search}%' OR email LIKE '%${search}%' `;
+    }
+    let getQuery = `SELECT *  ${baseQuery} ${whereClause} ORDER BY created_at DESC  LIMIT ${limit} OFFSET ${offset} `;
+    const selectResult = await queryRunner(getQuery);
+
+    if (selectResult[0].length > 0) {
+      const countQuery = ` SELECT COUNT(DISTINCT id) AS total ${baseQuery} ${whereClause} `;
+      const totalPages = await getTotalPage(countQuery, limit);
+      res.status(200).json({
+        statusCode: 200,
+        message: "Success",
+        data: selectResult[0],
+        totalPages
+      });
+    } else {
+      res.status(200).json({
+        data: [],
+        message: "User Not Found",
+      });
+    }
   } catch (error) {
-    console.error("Error fetching users:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
+    console.error("Query error: ", error);
+    return res.status(500).json({
+      statusCode: 500,
+      message: "Failed to get users",
+      error: error.message,
     });
   }
 };
@@ -168,3 +188,37 @@ exports.getAllJob = async (req, res) => {
     });
   }
 };
+
+exports.statisticData = async (req, res) => {
+
+  try {
+    let query = ` SELECT
+    (SELECT COUNT(DISTINCT id) FROM jobs) as total_jobs,
+    (SELECT COUNT(DISTINCT id) FROM gigs) as total_gigs,
+    (SELECT COUNT(DISTINCT id) FROM projects) as total_projects,
+    (SELECT COUNT(DISTINCT id) FROM users) as total_users
+    `;
+    const selectResult = await queryRunner(query);
+    if (selectResult[0].length > 0) {
+      res.status(200).json({
+        statusCode: 200,
+        message: "Success",
+        data: selectResult[0],
+      });
+    } else {
+      res.status(200).json({
+        data: [],
+        message: "Data Not Found",
+      });
+    }
+  } catch (error) {
+    console.error("Query error: ", error);
+    return res.status(500).json({
+      statusCode: 500,
+      message: "Failed to data",
+      error: error.message,
+    });
+  }
+};
+
+
