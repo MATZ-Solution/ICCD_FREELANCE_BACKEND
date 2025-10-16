@@ -196,7 +196,8 @@ exports.statisticData = async (req, res) => {
     (SELECT COUNT(DISTINCT id) FROM jobs) as total_jobs,
     (SELECT COUNT(DISTINCT id) FROM gigs) as total_gigs,
     (SELECT COUNT(DISTINCT id) FROM projects) as total_projects,
-    (SELECT COUNT(DISTINCT id) FROM users) as total_users
+    (SELECT COUNT(DISTINCT id) FROM users) as total_users,
+    (SELECT COUNT(DISTINCT id) FROM job_proposals where status = 'selected') as awarded_jobs
     `;
     const selectResult = await queryRunner(query);
     if (selectResult[0].length > 0) {

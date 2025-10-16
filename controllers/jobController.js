@@ -426,7 +426,9 @@ exports.applyJob = async function (req, res) {
 
 exports.getJobProposalsByClient = async (req, res) => {
   const { userId } = req.user;
-  const { id } = req.query;
+  const { search, page = 1 , id } = req.query;
+  const limit = 12;
+  const offset = (page - 1) * limit;
   try {
     // const getJobQuery = `
     // SELECT  jp.id, jp.email, jp.status, jp.experience, jp.fileUrl,
@@ -437,19 +439,26 @@ exports.getJobProposalsByClient = async (req, res) => {
     // WHERE jp.clientId = ? AND jobId = ?
     //  `;
 
-       const getJobQuery = `
-    SELECT  name, email, experience, fileUrl
+    const baseQuery = `
     FROM job_proposals
     WHERE jobId = ?
      `;
+    let whereClause = "";
+    if (search) {
+      whereClause = `AND ( name LIKE '%${search}%' ) `;
+    }
+    const getJobQuery = ` SELECT  name, email, experience, fileUrl ${baseQuery} ${whereClause} LIMIT ${limit} OFFSET ${offset}`;
+
     const selectResult = await queryRunner(getJobQuery, [id]);
-    // const selectResult = await queryRunner(getJobQuery, [userId, id]);
 
     if (selectResult[0].length > 0) {
+      const countQuery = ` SELECT COUNT(id) AS total ${baseQuery} ${whereClause} `;
+      const totalPages = await getTotalPage(countQuery, limit, [userId]);
       res.status(200).json({
         statusCode: 200,
         message: "Success",
         data: selectResult[0],
+        totalPages: totalPages
       });
     } else {
       res.status(200).json({

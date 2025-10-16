@@ -64,7 +64,7 @@ app.use((req, res, next) => {
 // app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerFile)); // This comes after app is initialized
 
 app.get("/", (req, res) => {
-  res.send("Hello World ICCD FREELANCE PLATFORM! 11-08-2025 again 1");
+  res.send("Hello World ICCD TALENT GATE! 11-08-2025 again 1");
 });
 
 getConnectionFromPool();
