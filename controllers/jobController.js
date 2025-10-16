@@ -1,6 +1,8 @@
 const { queryRunner } = require("../helper/queryRunner");
 const handleNotifications = require("../utils/sendnotification");
 const { getTotalPage } = require("../helper/getTotalPage");
+const { emailTemplates } = require("../utils/emailTemplates");
+const { sendEmail } = require("../helper/emailService");
 
 exports.addJob = async function (req, res) {
   const { userId } = req.user;
@@ -8,7 +10,8 @@ exports.addJob = async function (req, res) {
   const {
     jobTitle,
     jobType,
-    joblocation,
+    country,
+    city,
     payType,
     minSalaray,
     maxSalaray,
@@ -18,16 +21,19 @@ exports.addJob = async function (req, res) {
 
   try {
     // Add job into database
-    const insertProjectQuery = `INSERT INTO jobs( jobTitle, jobType, joblocation, payType, minSalaray, maxSalaray, jobDescription, totalPersontoHire, clientID) VALUES (?,?,?,?,?,?,?,?,?) `;
+    const insertProjectQuery = `INSERT INTO jobs( jobTitle, jobType, country, city, payType, minSalaray, maxSalaray, jobDescription, totalPersontoHire, remaining_position, status, clientID) VALUES (?,?,?,?,?,?,?,?,?,?,?,?) `;
     const queryParams = [
       jobTitle,
       jobType,
-      joblocation,
+      country,
+      city,
       payType,
       minSalaray,
       maxSalaray,
       jobDescription,
       totalPersontoHire,
+      totalPersontoHire,
+      "open",
       userId,
     ];
     const insertFileResult = await queryRunner(insertProjectQuery, queryParams);
@@ -61,13 +67,122 @@ exports.addJob = async function (req, res) {
   }
 };
 
+exports.closeJob = async function (req, res) {
+  const { id } = req.params;
+  try {
+    const updateQuery = `UPDATE jobs SET status = ? WHERE id = ?`;
+    const queryParams = ["closed", id];
+    const result = await queryRunner(updateQuery, queryParams);
+    if (result?.[0]?.affectedRows > 0) {
+      return res.status(200).json({
+        statusCode: 200,
+        message: "Job closed successfully.",
+      });
+    } else {
+      return res.status(404).json({
+        statusCode: 404,
+        message: "No job found with the given ID.",
+      });
+    }
+  } catch (error) {
+    console.error("Edit Job Error:", error);
+    return res.status(500).json({
+      statusCode: 500,
+      message: "Failed to closed job",
+      error: error.message,
+    });
+  }
+};
+
+exports.jobProposalsAction = async function (req, res) {
+  const { id, name, email, action, remaining_position, jobId } = req.body;
+
+  if (!id || !action) {
+    return res.status(400).json({
+      statusCode: 400,
+      message: "Missing required parameters.",
+    });
+  }
+
+  try {
+    // If proposal accepted
+    if (action === "accept") {
+      if (remaining_position <= 0) {
+        return res.status(400).json({
+          statusCode: 400,
+          message: "No open positions available for this job.",
+        });
+      }
+
+      const updatePosition = remaining_position - 1;
+      const { subject, html } = emailTemplates.jobAccepted;
+
+      const [updateJob, updateProposal] = await Promise.all([
+        queryRunner(
+          `UPDATE jobs SET remaining_position = ? WHERE id = ?`,
+          [updatePosition, jobId]
+        ),
+        queryRunner(
+          `UPDATE job_proposals SET status = ? WHERE id = ?`,
+          ["selected", id]
+        ),
+      ]);
+
+      const jobUpdated = updateJob?.[0]?.affectedRows > 0;
+      const proposalUpdated = updateProposal?.[0]?.affectedRows > 0;
+
+      if (jobUpdated && proposalUpdated) {
+        await sendEmail(email, subject, html(name)); // send email after success
+
+        return res.status(200).json({
+          statusCode: 200,
+          message: "Proposal accepted and applicant notified.",
+        });
+      } else {
+        return res.status(404).json({
+          statusCode: 404,
+          message: "Failed to update job or proposal record.",
+        });
+      }
+    }
+
+    // If proposal rejected
+    const [result] = await queryRunner(
+      `UPDATE job_proposals SET status = ? WHERE id = ?`,
+      ["not selected", id]
+    );
+
+    if (result?.affectedRows > 0) {
+      return res.status(200).json({
+        statusCode: 200,
+        message: "Proposal marked as not selected.",
+      });
+    }
+
+    // Default: No records found
+    return res.status(404).json({
+      statusCode: 404,
+      message: "No proposals found with the given ID.",
+    });
+
+  } catch (error) {
+    console.error("Job Proposal Action Error:", error);
+    return res.status(500).json({
+      statusCode: 500,
+      message: "Failed to update job proposal status.",
+      error: error.message,
+    });
+  }
+};
+
 exports.editJob = async function (req, res) {
   const { id: jobId } = req.params;
 
   const {
     jobTitle,
     jobType,
-    joblocation,
+    country,
+    city,
     payType,
     minSalaray,
     maxSalaray,
@@ -81,7 +196,8 @@ exports.editJob = async function (req, res) {
       SET 
         jobTitle = ?, 
         jobType = ?, 
-        joblocation = ?, 
+        country = ?, 
+        city = ?,
         payType = ?, 
         minSalaray = ?, 
         maxSalaray = ?, 
@@ -93,7 +209,8 @@ exports.editJob = async function (req, res) {
     const queryParams = [
       jobTitle,
       jobType,
-      joblocation,
+      country,
+      city,
       payType,
       minSalaray,
       maxSalaray,
@@ -126,31 +243,33 @@ exports.editJob = async function (req, res) {
 };
 
 exports.getAllJob = async (req, res) => {
-  const { jobTitle, jobType, joblocation, page = 1 } = req.query;
+  const { jobTitle, type, country, city, page = 1 } = req.query;
+  console.log("request query: ", req.query);
   const limit = 10;
   const offset = (page - 1) * limit;
   try {
     let baseQuery = `
       FROM jobs j LEFT JOIN users u ON u.id = j.clientID 
     `;
-    const queryParams = [];
-    const queryValue = [];
-    const whereClause = ""
-    
+    let whereCond = [];
+    let whereClause = "";
+
     if (jobTitle) {
-      queryParams.push(` j.jobTitle LIKE ? `);
-      queryValue.push(`%${jobTitle}%`);
+      whereCond.push(` ( j.jobTitle LIKE '%${jobTitle}%' ) `);
     }
-    if (jobType) {
-      queryParams.push(` j.jobType LIKE ? `);
-      queryValue.push(`%${jobType}%`);
+    if (type) {
+      whereCond.push(` ( j.jobType LIKE '%${type}%' ) `);
     }
-    if (joblocation) {
-      queryParams.push(` j.joblocation LIKE ? `);
-      queryValue.push(`%${joblocation}%`);
+    if (country) {
+      whereCond.push(` ( j.country LIKE '%${country}%' ) `);
     }
-    if (queryParams.length > 0) {
-      whereClause += "WHERE" + ` ${queryParams.join(" AND ")} `;
+    if (city) {
+      whereCond.push(` ( j.city LIKE '%${city}%' ) `);
+    }
+
+    if (whereCond.length > 0) {
+      let concat_whereCond = whereCond.join(" AND ");
+      whereClause += "WHERE" + ` ${concat_whereCond} `;
     }
 
     let getProjectQuery = `SELECT j.*, u.name 
@@ -159,15 +278,15 @@ exports.getAllJob = async (req, res) => {
      LIMIT ${limit} OFFSET ${offset}
     `;
 
-    const selectResult = await queryRunner(getProjectQuery, queryValue);
-    const countQuery = ` SELECT COUNT(DISTINCT j.id) AS total ${baseQuery} ${whereClause} `;
-    const totalPages = await getTotalPage(countQuery, limit);
+    const selectResult = await queryRunner(getProjectQuery);
     if (selectResult[0].length > 0) {
+      const countQuery = ` SELECT COUNT(DISTINCT j.id) AS total ${baseQuery} ${whereClause} `;
+      const totalPages = await getTotalPage(countQuery, limit);
       res.status(200).json({
         statusCode: 200,
         message: "Success",
         data: selectResult[0],
-        totalPages
+        totalPages,
       });
     } else {
       res.status(200).json({
@@ -265,15 +384,18 @@ exports.getJobByClient = async (req, res) => {
 
 exports.applyJob = async function (req, res) {
   const { userId } = req.user;
-  const { name, experience, freelancerId, projectId, clientId } = req.body;
+  const { name, email, experience, freelancerId, projectId, clientId } =
+    req.body;
   const files = req.files;
 
   try {
     // Add job_proposals into database
-    const insertProposalsQuery = `INSERT INTO job_proposals(name, experience, jobId, clientId, freelancerId, fileUrl, fileKey) VALUES (?,?,?,?,?,?,?) `;
+    const insertProposalsQuery = `INSERT INTO job_proposals(name, email, experience, status, jobId, clientId, freelancerId, fileUrl, fileKey) VALUES (?,?,?,?,?,?,?,?,?) `;
     const values = [
       name,
+      email,
       experience,
+      "awaiting response",
       projectId,
       clientId,
       freelancerId,
@@ -306,15 +428,22 @@ exports.getJobProposalsByClient = async (req, res) => {
   const { userId } = req.user;
   const { id } = req.query;
   try {
-    const getJobQuery = `
-    SELECT  jp.experience, jp.fileUrl,
-    f.id AS freelancerId, CONCAT(f.firstName, ' ', f.lastName) AS freelancerName,
-    f.fileUrl as candidateImg
-    FROM job_proposals jp
-    LEFT JOIN freelancers f ON f.id = jp.freelancerId
-    WHERE jp.clientId = ? AND jobId = ?
+    // const getJobQuery = `
+    // SELECT  jp.id, jp.email, jp.status, jp.experience, jp.fileUrl,
+    // f.id AS freelancerId, CONCAT(f.firstName, ' ', f.lastName) AS freelancerName,
+    // f.fileUrl as candidateImg
+    // FROM job_proposals jp
+    // LEFT JOIN freelancers f ON f.id = jp.freelancerId
+    // WHERE jp.clientId = ? AND jobId = ?
+    //  `;
+
+       const getJobQuery = `
+    SELECT  name, email, experience, fileUrl
+    FROM job_proposals
+    WHERE jobId = ?
      `;
-    const selectResult = await queryRunner(getJobQuery, [userId, id]);
+    const selectResult = await queryRunner(getJobQuery, [id]);
+    // const selectResult = await queryRunner(getJobQuery, [userId, id]);
 
     if (selectResult[0].length > 0) {
       res.status(200).json({

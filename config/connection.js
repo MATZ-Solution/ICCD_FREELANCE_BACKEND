@@ -21,7 +21,6 @@ const createPool = async () => {
     password: "$^+)MLZYc5S)uo",
     database: "matzsolu_iccd_freelance_platform",
 
-
   });
 
   return pool;

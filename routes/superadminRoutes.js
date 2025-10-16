@@ -7,11 +7,13 @@ const express = require("express");
 
 const router = express.Router();
 
-router.get('/getAllUsers', superadminController.getAllUsers);
-router.get("/getAllOrder", getAllOrderByAdmin);
-router.get("/getAllFreelancers", superadminController.getAllFreelancers);
-router.get("/getAllGigs", superadminController.getAllGigs);
-router.get("/getAllProjects", superadminController.getAllProjects);
+router.get('/getAllUsers', verifyToken, superadminController.getAllUsers);
+router.get("/getAllOrder", verifyToken, getAllOrderByAdmin);
+router.get("/getAllFreelancers", verifyToken, superadminController.getAllFreelancers);
+router.get("/getAllGigs", verifyToken, superadminController.getAllGigs);
+router.get("/getAllProjects", verifyToken, superadminController.getAllProjects);
+router.get("/getAllJobs", verifyToken, superadminController.getAllJob);
+router.get("/statisticData", verifyToken, superadminController.statisticData);
 
 
 module.exports = router;

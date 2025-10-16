@@ -1,25 +1,45 @@
 const { queryRunner } = require("../helper/queryRunner");
 const handleNotifications = require("../utils/sendnotification");
+const { getTotalPage } = require("../helper/getTotalPage");
 
-exports.getAllUsers = async function (req, res) {
+exports.getAllUsers = async (req, res) => {
+  const { search, page = 1 } = req.query;
+  const limit = 10;
+  const offset = (page - 1) * limit;
+
   try {
-    const sql = "SELECT * FROM users";
-    const [rows] = await queryRunner(sql);
+    let baseQuery = ` FROM users `;
+    let whereClause = "";
+    if (search) {
+      whereClause += ` WHERE name LIKE '%${search}%' OR email LIKE '%${search}%' `;
+    }
+    let getQuery = `SELECT *  ${baseQuery} ${whereClause} ORDER BY created_at DESC  LIMIT ${limit} OFFSET ${offset} `;
+    const selectResult = await queryRunner(getQuery);
 
-    res.status(200).json({
-      success: true,
-      count: rows.length,
-      data: rows,
-    });
+    if (selectResult[0].length > 0) {
+      const countQuery = ` SELECT COUNT(DISTINCT id) AS total ${baseQuery} ${whereClause} `;
+      const totalPages = await getTotalPage(countQuery, limit);
+      res.status(200).json({
+        statusCode: 200,
+        message: "Success",
+        data: selectResult[0],
+        totalPages
+      });
+    } else {
+      res.status(200).json({
+        data: [],
+        message: "User Not Found",
+      });
+    }
   } catch (error) {
-    console.error("Error fetching users:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
+    console.error("Query error: ", error);
+    return res.status(500).json({
+      statusCode: 500,
+      message: "Failed to get users",
+      error: error.message,
     });
   }
 };
-
 
 exports.getAllFreelancers = async function (req, res) {
   try {
@@ -55,7 +75,6 @@ exports.getAllFreelancers = async function (req, res) {
   }
 };
 
-
 exports.getAllGigs = async function (req, res) {
   try {
     const sql = "SELECT * FROM gigs"; // assume table name is 'gigs'
@@ -77,10 +96,9 @@ exports.getAllGigs = async function (req, res) {
   }
 };
 
-
 exports.getAllProjects = async function (req, res) {
   try {
-    const sql = "SELECT * FROM projects"; 
+    const sql = "SELECT * FROM projects";
     const [rows] = await queryRunner(sql);
 
     console.log("Fetched Projects:", rows);
@@ -98,3 +116,109 @@ exports.getAllProjects = async function (req, res) {
     });
   }
 };
+
+exports.getAllJob = async (req, res) => {
+  const { jobTitle, type, country, city, page = 1 } = req.query;
+  console.log("request query: ", req.query);
+  const limit = 10;
+  const offset = (page - 1) * limit;
+  try {
+    let baseQuery = `
+      FROM jobs j LEFT JOIN users u ON u.id = j.clientID 
+    `;
+    let whereCond = [];
+    let whereClause = "";
+
+    if (jobTitle) {
+      whereCond.push(` ( j.jobTitle LIKE '%${jobTitle}%' ) `);
+    }
+    if (type) {
+      whereCond.push(` ( j.jobType LIKE '%${type}%' ) `);
+    }
+    if (country) {
+      whereCond.push(` ( j.country LIKE '%${country}%' ) `);
+    }
+    if (city) {
+      whereCond.push(` ( j.city LIKE '%${city}%' ) `);
+    }
+
+    if (whereCond.length > 0) {
+      let concat_whereCond = whereCond.join(" AND ");
+      whereClause += "WHERE" + ` ${concat_whereCond} `;
+    }
+
+    let getProjectQuery = `SELECT j.*, u.name
+    ${baseQuery} 
+    ${whereClause}
+     LIMIT ${limit} OFFSET ${offset}
+    `;
+
+    const selectResult = await queryRunner(getProjectQuery);
+    if (selectResult[0].length > 0) {
+      const countQuery = ` SELECT COUNT(DISTINCT j.id) AS total ${baseQuery} ${whereClause} `;
+      const totalPages = await getTotalPage(countQuery, limit);
+    const activeJobQuery = `
+      SELECT 
+        (SELECT COUNT(DISTINCT id) FROM jobs WHERE status = 'open') AS active_jobs,
+        (SELECT COUNT(DISTINCT id) FROM jobs) AS total_jobs
+    `;
+
+      const activeJobResult = await queryRunner(activeJobQuery);
+
+      res.status(200).json({
+        statusCode: 200,
+        message: "Success",
+        data: selectResult[0],
+        active_jobs: activeJobResult[0][0].active_jobs,
+        total_jobs: activeJobResult[0][0].total_jobs,
+        totalPages,
+      });
+    } else {
+      res.status(200).json({
+        data: [],
+        message: "Jobs Not Found",
+      });
+    }
+  } catch (error) {
+    console.error("Query error: ", error);
+    return res.status(500).json({
+      statusCode: 500,
+      message: "Failed to get jobs",
+      error: error.message,
+    });
+  }
+};
+
+exports.statisticData = async (req, res) => {
+
+  try {
+    let query = ` SELECT
+    (SELECT COUNT(DISTINCT id) FROM jobs) as total_jobs,
+    (SELECT COUNT(DISTINCT id) FROM gigs) as total_gigs,
+    (SELECT COUNT(DISTINCT id) FROM projects) as total_projects,
+    (SELECT COUNT(DISTINCT id) FROM users) as total_users
+    `;
+    const selectResult = await queryRunner(query);
+    if (selectResult[0].length > 0) {
+      res.status(200).json({
+        statusCode: 200,
+        message: "Success",
+        data: selectResult[0],
+      });
+    } else {
+      res.status(200).json({
+        data: [],
+        message: "Data Not Found",
+      });
+    }
+  } catch (error) {
+    console.error("Query error: ", error);
+    return res.status(500).json({
+      statusCode: 500,
+      message: "Failed to data",
+      error: error.message,
+    });
+  }
+};
+
+
