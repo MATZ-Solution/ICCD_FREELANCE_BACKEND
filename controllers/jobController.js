@@ -244,7 +244,6 @@ exports.editJob = async function (req, res) {
 
 exports.getAllJob = async (req, res) => {
   const { jobTitle, type, country, city, page = 1 } = req.query;
-  console.log("request query: ", req.query);
   const limit = 10;
   const offset = (page - 1) * limit;
   try {
@@ -314,6 +313,43 @@ exports.getJobById = async (req, res) => {
     `;
 
     const selectResult = await queryRunner(getProjectQuery, [id]);
+
+    if (selectResult[0].length > 0) {
+      res.status(200).json({
+        statusCode: 200,
+        message: "Success",
+        data: selectResult[0],
+      });
+    } else {
+      res.status(200).json({
+        data: [],
+        message: "Jobs Not Found",
+      });
+    }
+  } catch (error) {
+    console.error("Query error: ", error);
+    return res.status(500).json({
+      statusCode: 500,
+      message: "Failed to get jobs",
+      error: error.message,
+    });
+  }
+};
+
+exports.getJobByIdFreelancer = async (req, res) => {
+  const { id, freelancerId } = req.query;
+ 
+  try {
+    const getProjectQuery = `
+    SELECT j.*,
+    EXISTS (
+    SELECT 1 FROM job_proposals 
+    WHERE job_proposals.jobId = j.id AND job_proposals.freelancerId = ?) AS applied
+    FROM jobs j
+    WHERE j.id = ?;
+    `;
+
+    const selectResult = await queryRunner(getProjectQuery, [freelancerId, id]);
 
     if (selectResult[0].length > 0) {
       res.status(200).json({
@@ -426,7 +462,7 @@ exports.applyJob = async function (req, res) {
 
 exports.getJobProposalsByClient = async (req, res) => {
   const { userId } = req.user;
-  const { search, page = 1 , id } = req.query;
+  const { search, page = 1, id } = req.query;
   const limit = 12;
   const offset = (page - 1) * limit;
   try {
