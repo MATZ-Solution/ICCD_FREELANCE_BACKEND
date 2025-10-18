@@ -336,6 +336,35 @@ exports.getJobById = async (req, res) => {
   }
 };
 
+exports.getJobShortlistedCandidates = async (req, res) => {
+  const { id } = req.params;
+  try {
+
+    const query = ` SELECT name, email, experience, fileUrl FROM job_proposals j WHERE status = 'selected' AND jobId = ? `;
+    const selectResult = await queryRunner(query, [id]);
+
+    if (selectResult[0].length > 0) {
+      res.status(200).json({
+        statusCode: 200,
+        message: "Success",
+        data: selectResult[0],
+      });
+    } else {
+      res.status(200).json({
+        data: [],
+        message: "No Shortlist candidate Found",
+      });
+    }
+  } catch (error) {
+    console.error("Query error: ", error);
+    return res.status(500).json({
+      statusCode: 500,
+      message: "Failed to get jobs",
+      error: error.message,
+    });
+  }
+};
+
 exports.getJobByIdFreelancer = async (req, res) => {
   const { id, freelancerId } = req.query;
  
