@@ -483,7 +483,7 @@ exports.getJobProposalsByClient = async (req, res) => {
     if (search) {
       whereClause = `AND ( name LIKE '%${search}%' ) `;
     }
-    const getJobQuery = ` SELECT  name, email, experience, fileUrl ${baseQuery} ${whereClause} LIMIT ${limit} OFFSET ${offset}`;
+    const getJobQuery = ` SELECT  id, name, email, experience, fileUrl ${baseQuery} ${whereClause} LIMIT ${limit} OFFSET ${offset}`;
 
     const selectResult = await queryRunner(getJobQuery, [id]);
 

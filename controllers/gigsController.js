@@ -151,8 +151,6 @@ exports.getAllGigs = async (req, res) => {
   const limit = 15;
   const offset = (page - 1) * limit;
 
-  console.log("query: ", req.query)
-
   try {
     let baseQuery = `
       FROM gigs g

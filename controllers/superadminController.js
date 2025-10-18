@@ -23,7 +23,7 @@ exports.getAllUsers = async (req, res) => {
         statusCode: 200,
         message: "Success",
         data: selectResult[0],
-        totalPages
+        totalPages,
       });
     } else {
       res.status(200).json({
@@ -42,30 +42,47 @@ exports.getAllUsers = async (req, res) => {
 };
 
 exports.getAllFreelancers = async function (req, res) {
+  const { search, page = 1 } = req.query;
+  const limit = 15;
+  const offset = (page - 1) * limit;
   try {
-    const sql = `
-      SELECT 
-        f.*, 
-        u.email, 
-        u.id AS user_id, 
+    const baseQuery = ` FROM freelancers f LEFT JOIN users u ON u.id = f.userID `;
+    let whereCond = [];
+    let whereClause = "";
+    if (search) {
+      whereCond.push(
+        ` (firstName LIKE '%${search}%' OR lastName LIKE '%${search}%' `
+      );
+    }
+    if (whereCond.length > 0) {
+      let concat_whereCond = whereCond.join(" AND ");
+      whereClause += ` WHERE ${concat_whereCond} `;
+    }
+    let getQuery = ` SELECT f.*, u.email, u.id AS user_id, 
         (
           SELECT GROUP_CONCAT(fs.skill) 
           FROM freelancer_skills fs  
           WHERE fs.freelancer_id = f.id
-        ) AS skills 
-      FROM freelancers f 
-      LEFT JOIN users u ON u.id = f.userID
-    `;
+        ) AS skills  ${baseQuery} ${whereClause} LIMIT ${limit} offset ${offset}`;
+  
+    const selectResult = await queryRunner(getQuery);
 
-    const [rows] = await queryRunner(sql);
+    if (selectResult[0].length > 0) {
+      const countQuery = ` SELECT COUNT(DISTINCT f.id) AS total ${baseQuery} ${whereClause} `;
+      const totalPages = await getTotalPage(countQuery, limit);
+      res.status(200).json({
+        statusCode: 200,
+        message: "Success",
+        data: selectResult[0],
+        totalPages,
+      });
+    } else {
+      res.status(200).json({
+        data: [],
+        message: "Freelancer Not Found",
+      });
+    }
 
-    console.log("Fetched freelancers:", rows);
-
-    res.status(200).json({
-      success: true,
-      count: rows.length,
-      data: rows,
-    });
   } catch (error) {
     console.error("Error fetching freelancers:", error);
     res.status(500).json({
@@ -77,16 +94,40 @@ exports.getAllFreelancers = async function (req, res) {
 
 exports.getAllGigs = async function (req, res) {
   try {
-    const sql = "SELECT * FROM gigs"; // assume table name is 'gigs'
-    const [rows] = await queryRunner(sql);
+    const { search, page = 1 } = req.query;
+    const limit = 15;
+    const offset = (page - 1) * limit;
 
-    console.log("Fetched gigs:", rows);
+    const baseQuery = ` FROM gigs `;
+    let whereCond = [];
+    let whereClause = "";
+    if (search) {
+      whereCond.push(
+        ` (title LIKE '%${search}%' OR description LIKE '%${search}%' OR category LIKE '%${search}%' OR subCategory LIKE '%${search}%') `
+      );
+    }
+    if (whereCond.length > 0) {
+      let concat_whereCond = whereCond.join(" AND ");
+      whereClause += ` WHERE ${concat_whereCond} `;
+    }
+    let getProjectQuery = `SELECT * ${baseQuery} ${whereClause} LIMIT ${limit} offset ${offset}`;
+    const selectResult = await queryRunner(getProjectQuery);
 
-    res.status(200).json({
-      success: true,
-      count: rows.length,
-      data: rows,
-    });
+    if (selectResult[0].length > 0) {
+      const countQuery = ` SELECT COUNT(DISTINCT id) AS total ${baseQuery} ${whereClause} `;
+      const totalPages = await getTotalPage(countQuery, limit);
+      res.status(200).json({
+        statusCode: 200,
+        message: "Success",
+        data: selectResult[0],
+        totalPages,
+      });
+    } else {
+      res.status(200).json({
+        data: [],
+        message: "Gigs Not Found",
+      });
+    }
   } catch (error) {
     console.error("Error fetching gigs:", error);
     res.status(500).json({
@@ -157,7 +198,7 @@ exports.getAllJob = async (req, res) => {
     if (selectResult[0].length > 0) {
       const countQuery = ` SELECT COUNT(DISTINCT j.id) AS total ${baseQuery} ${whereClause} `;
       const totalPages = await getTotalPage(countQuery, limit);
-    const activeJobQuery = `
+      const activeJobQuery = `
       SELECT 
         (SELECT COUNT(DISTINCT id) FROM jobs WHERE status = 'open') AS active_jobs,
         (SELECT COUNT(DISTINCT id) FROM jobs) AS total_jobs
@@ -190,7 +231,6 @@ exports.getAllJob = async (req, res) => {
 };
 
 exports.statisticData = async (req, res) => {
-
   try {
     let query = ` SELECT
     (SELECT COUNT(DISTINCT id) FROM jobs) as total_jobs,
@@ -221,5 +261,3 @@ exports.statisticData = async (req, res) => {
     });
   }
 };
-
-
