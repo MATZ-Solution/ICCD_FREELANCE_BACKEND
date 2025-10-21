@@ -14,7 +14,7 @@ const createPool = async () => {
     // database: "matzsolu_iccd_freelance",
 
     // ######## ------- live database connection ########
-    connectionLimit: 10,
+    // connectionLimit: 10,
     host: "93.127.192.89",
     port: "3306",
     user: "matzsolu_iccd_freelance_platform",
