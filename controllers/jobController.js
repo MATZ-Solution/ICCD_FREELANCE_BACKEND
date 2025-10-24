@@ -10,6 +10,7 @@ exports.addJob = async function (req, res) {
   const {
     jobTitle,
     jobType,
+    companyName,
     country,
     city,
     payType,
@@ -21,10 +22,11 @@ exports.addJob = async function (req, res) {
 
   try {
     // Add job into database
-    const insertProjectQuery = `INSERT INTO jobs( jobTitle, jobType, country, city, payType, minSalaray, maxSalaray, jobDescription, totalPersontoHire, remaining_position, status, clientID) VALUES (?,?,?,?,?,?,?,?,?,?,?,?) `;
+    const insertProjectQuery = `INSERT INTO jobs( jobTitle, jobType, companyName, country, city, payType, minSalaray, maxSalaray, jobDescription, totalPersontoHire, remaining_position, status, clientID) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) `;
     const queryParams = [
       jobTitle,
       jobType,
+      companyName,
       country,
       city,
       payType,
@@ -181,6 +183,7 @@ exports.editJob = async function (req, res) {
   const {
     jobTitle,
     jobType,
+    companyName,
     country,
     city,
     payType,
@@ -196,6 +199,7 @@ exports.editJob = async function (req, res) {
       SET 
         jobTitle = ?, 
         jobType = ?, 
+        companyName = ?,
         country = ?, 
         city = ?,
         payType = ?, 
@@ -209,6 +213,7 @@ exports.editJob = async function (req, res) {
     const queryParams = [
       jobTitle,
       jobType,
+      companyName,
       country,
       city,
       payType,
@@ -274,6 +279,7 @@ exports.getAllJob = async (req, res) => {
     let getProjectQuery = `SELECT j.*, u.name 
     ${baseQuery} 
     ${whereClause}
+     ORDER BY id DESC
      LIMIT ${limit} OFFSET ${offset}
     `;
 

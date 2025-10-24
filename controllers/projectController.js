@@ -180,7 +180,7 @@ exports.getAllProject = async (req, res) => {
       whereClause += ` WHERE title LIKE '%${search}%' OR description LIKE '%${search}%' OR category LIKE '%${search}%' OR subCategory LIKE '%${search}%' `;
     }
 
-    let getProjectQuery = `SELECT *  ${baseQuery} ${whereClause} LIMIT ${limit} OFFSET ${offset}`;
+    let getProjectQuery = `SELECT *  ${baseQuery} ${whereClause}  ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}`;
 
     const selectResult = await queryRunner(getProjectQuery);
 
