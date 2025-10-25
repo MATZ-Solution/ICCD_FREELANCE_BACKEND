@@ -44,9 +44,9 @@ exports.addProject = async function (req, res) {
     const insertFileResult = await queryRunner(insertProjectQuery, values);
 
     const project_id = insertFileResult[0].insertId;
-
-    if (skills && skills.length > 0) {
-      for (const skill of skills) {
+    let parsedSkills = JSON.parse(skills)
+    if (parsedSkills && parsedSkills.length > 0) {
+      for (const skill of parsedSkills) {
         const insertProjectQuery = `INSERT INTO project_skills( name, project_id) VALUES (?,?) `;
         const queryParams = [skill, project_id];
         const insertFileResult = await queryRunner(
