@@ -3,7 +3,7 @@ const { getTotalPage } = require("../helper/getTotalPage");
 
 exports.addProject = async function (req, res) {
   const { userId } = req.user;
-  const {
+  let {
     budget,
     category,
     deadline,
@@ -12,44 +12,41 @@ exports.addProject = async function (req, res) {
     duration,
     freelancerType,
     language,
-    mode,
-    overview,
     skills,
     subCategory,
     title,
-    total_freelancer,
-    type,
   } = req.body;
+  console.log("body: ", req.body)
 
   try {
     // Add project into database
+    if (typeof deadline === "string" && deadline.startsWith('"')) {
+      deadline = JSON.parse(deadline); // remove outer quotes
+    }
     const formattedDeadline = new Date(deadline)
       .toISOString()
       .slice(0, 19)
       .replace("T", " ");
-    const insertProjectQuery = `INSERT INTO projects(title, budget,type, description, clientID, category, subCategory, deadline, duration, total_freelancer, freelancerType, overview, deliverable, mode) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?) `;
+    const insertProjectQuery = `INSERT INTO projects(title, budget, description, clientID, category, subCategory, deadline, duration, freelancerType, deliverable) VALUES (?,?,?,?,?,?,?,?,?,?) `;
     const values = [
       title,
       budget,
-      type,
       description,
       userId,
       category,
       subCategory,
       formattedDeadline,
       duration,
-      total_freelancer,
       freelancerType,
-      overview,
       deliverable,
-      mode,
     ];
+
     const insertFileResult = await queryRunner(insertProjectQuery, values);
 
     const project_id = insertFileResult[0].insertId;
-
-    if (skills && skills.length > 0) {
-      for (const skill of skills) {
+    let parsedSkills = JSON.parse(skills)
+    if (parsedSkills && parsedSkills.length > 0) {
+      for (const skill of parsedSkills) {
         const insertProjectQuery = `INSERT INTO project_skills( name, project_id) VALUES (?,?) `;
         const queryParams = [skill, project_id];
         const insertFileResult = await queryRunner(
@@ -73,10 +70,11 @@ exports.addProject = async function (req, res) {
     // Add files into database
     if (insertFileResult[0].affectedRows > 0) {
       let projectID = insertFileResult[0].insertId;
+      console.log("req.files.length :", req.files.length)
       if (req.files.length > 0) {
         for (const file of req.files) {
           const insertFileResult = await queryRunner(
-            "INSERT INTO projectfiles (fileUrl, fileKey, projectID) VALUES (?, ?, ?)",
+            "INSERT INTO project_files (fileUrl, fileKey, projectID) VALUES (?, ?, ?)",
             [file.location, file.key, projectID]
           );
           if (insertFileResult.affectedRows <= 0) {
@@ -115,7 +113,7 @@ exports.getProjectByClient = async (req, res) => {
   try {
     let baseQuery = `
       FROM projects p 
-      LEFT JOIN projectfiles pf ON pf.projectID = p.id
+      LEFT JOIN project_files pf ON pf.projectID = p.id
       LEFT JOIN project_skills ps ON ps.project_id = p.id
       LEFT JOIN project_proposals pp ON pp.projectId = p.id
       WHERE p.clientID = ?
@@ -221,11 +219,13 @@ exports.getProjectById = async (req, res) => {
   try {
     const getProjectQuery = `
     SELECT  p.*, GROUP_CONCAT(DISTINCT ps.name) AS skills, GROUP_CONCAT(DISTINCT pl.name) AS languages,
+    GROUP_CONCAT(DISTINCT pf.fileUrl) AS files,
     u.name as companyName, u.about as companyAbout, u.fileUrl as companyImg
     FROM projects p 
     LEFT JOIN project_skills ps ON ps.project_id = p.id
     LEFT JOIN project_language pl ON pl.project_id = p.id
     LEFT JOIN users u ON u.id = p.clientID
+    LEFT JOIN project_files pf ON pf.projectID = p.id
     WHERE p.id = ?
      `;
     const selectResult = await queryRunner(getProjectQuery, [projectId]);
