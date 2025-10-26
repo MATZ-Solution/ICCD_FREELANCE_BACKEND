@@ -16,7 +16,6 @@ exports.addProject = async function (req, res) {
     subCategory,
     title,
   } = req.body;
-  console.log("body: ", req.body)
 
   try {
     // Add project into database
@@ -292,20 +291,27 @@ exports.getProjectProposalsByClient = async (req, res) => {
 };
 
 exports.applyProject = async function (req, res) {
-  const { name, experience, clientId, projectId, freelancerId } = req.body;
+  const { portfolioLinks, paymentTerms, currency, proposedBudget, timeUnit, estimatedTime,
+    proposedDeliverables, coverLetter, email, freelancerName,
+     clientId, projectId, freelancerId } = req.body;
   const files = req.files;
-
   try {
     // Add project_proposals into database
-    const insertProposalsQuery = `INSERT INTO project_proposals(name, experience, projectId, clientId, freelancerId, fileUrl, fileKey) VALUES (?,?,?,?,?,?,?) `;
+    const insertProposalsQuery = `INSERT INTO project_proposals(name, email, fileUrl, fileKey, projectId, clientId, freelancerId, coverLetter, deliverable, budget, currency, paymentTerms, portfolioLinks) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) `;
     const values = [
-      name,
-      experience,
+      freelancerName,
+      email,
+      files[0].location,
+      files[0].key,
       projectId,
       clientId,
       freelancerId,
-      files[0].location,
-      files[0].key,
+      coverLetter,
+      proposedDeliverables,
+      proposedBudget,
+      currency,
+      paymentTerms,
+      portfolioLinks
     ];
     const insertFileResult = await queryRunner(insertProposalsQuery, values);
 
