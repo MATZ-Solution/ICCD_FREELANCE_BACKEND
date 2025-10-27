@@ -64,7 +64,7 @@ exports.getAllFreelancers = async function (req, res) {
           FROM freelancer_skills fs  
           WHERE fs.freelancer_id = f.id
         ) AS skills  ${baseQuery} ${whereClause} LIMIT ${limit} offset ${offset}`;
-  
+
     const selectResult = await queryRunner(getQuery);
 
     if (selectResult[0].length > 0) {
@@ -257,6 +257,34 @@ exports.statisticData = async (req, res) => {
     return res.status(500).json({
       statusCode: 500,
       message: "Failed to data",
+      error: error.message,
+    });
+  }
+};
+
+exports.closedDispute = async (req, res) => {
+  const { id } = req.params;
+  const { status, action, closed_reason } = req.body
+  try {
+    const insertProposalsQuery = `UPDATE dispute SET status = ?, action = ?, closed_reason = ? WHERE id = ?`;
+    const values = [status, action, closed_reason, id];
+    const insertFileResult = await queryRunner(insertProposalsQuery, values);
+    if (insertFileResult[0].affectedRows > 0) {
+      return res.status(200).json({
+        statusCode: 200,
+        message: "Dispute closed successfully",
+      });
+    } else {
+      return res.status(200).json({
+        statusCode: 200,
+        message: "Failed to close dispute",
+      });
+    }
+  } catch (error) {
+    console.error("Query error: ", error);
+    return res.status(500).json({
+      statusCode: 500,
+      message: "Failed to closed dispute",
       error: error.message,
     });
   }
