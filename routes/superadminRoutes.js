@@ -15,5 +15,8 @@ router.get("/getAllProjects", verifyToken, superadminController.getAllProjects);
 router.get("/getAllJobs", verifyToken, superadminController.getAllJob);
 router.get("/statisticData", verifyToken, superadminController.statisticData);
 
+router.put("/closeDispute/:id", verifyToken, superadminController.closedDispute);
+
+
 
 module.exports = router;
