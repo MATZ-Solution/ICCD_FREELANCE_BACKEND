@@ -2,13 +2,14 @@ const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const { queryRunner } = require("../helper/queryRunner");
 const jwt = require("jsonwebtoken");
+require("dotenv").config();
 
 passport.use(
   new GoogleStrategy(
     {
-      clientID: '205822955997-9tb041db0e8rlh68h7cijana4sepk3oc.apps.googleusercontent.com',
-      clientSecret: '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',
-      callbackURL: 'https://iccd.freelanceserver.matzsolutions.com/auth/google/callback',
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: process.env.GOOGLE_CALLBACK_URL,
     },
    async (accessToken, refreshToken, profile, done) => {
       try {
@@ -33,7 +34,7 @@ passport.use(
           userId = userResult[0][0].id;
         }
 
-        const token = jwt.sign({ userId, email }, '1dikjsaciwndvc', { expiresIn: '7d' });
+        const token = jwt.sign({ userId, email }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
         return done(null, { token, user: { id: userId, name, email } });
       } catch (err) {

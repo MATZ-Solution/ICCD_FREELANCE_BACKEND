@@ -1,7 +1,8 @@
+require("dotenv").config();
 // config.js
 module.exports = {
-    bucketName: 'iccdfreelancematzsolutionsbucket',
-    awsAccessKeyId: "AKIAYBQVPHFK2FTPMPGN",
-    awsSecretAccessKey: "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",
-    region: 'eu-north-1',
+    bucketName: process.env.s3_bucketName,
+    awsAccessKeyId: process.env.s3_awsAccessKeyId,
+    awsSecretAccessKey: process.env.s3_awsSecretAccessKey,
+    region: process.env.s3_region,
   };

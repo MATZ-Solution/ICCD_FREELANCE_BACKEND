@@ -1,15 +1,17 @@
 // emailService.js
+require("dotenv").config();
+
 const nodemailer = require('nodemailer');
 
 const sendEmail = async (recipientEmail, subject, htmlContent) => {
   try {
     const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
+      host: process.env.email_host,
+      port: Number(process.env.email_port),
       secure: true,
       auth: {
-        user: "iccdtalentgate@gmail.com", // Your Gmail address
-        pass: "uojg itrw fqhf ifne", // Your generated app password
+        user: process.env.email_user, // Your Gmail address
+        pass: process.env.email_pass, // Your generated app password
       },
       debug: true, // Enable debug output
     });

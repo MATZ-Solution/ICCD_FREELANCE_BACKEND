@@ -21,9 +21,6 @@ const ratingRoutes = require('./routes/ratingsRoute');
 const feedbackRoutes = require('./routes/feedbackRoute');
 const issueRoutes = require('./routes/issueRoutes');
 const contactRoutes = require('./routes/contactsRoute');
-
-
-
 const swaggerUi = require('swagger-ui-express');
 const swaggerFile = require('./swagger/swagger-output.json'); 
 
@@ -98,8 +95,8 @@ app.use("/messages", messageRoutes);
 // });
 
 // live connection
-server.listen(22306,() => {
-  console.log("Server is running on port 22306");
+server.listen(process.env.PORT,() => {
+  console.log(`Server is running on port ${process.env.PORT}`);
 });
 
 

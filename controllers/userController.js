@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 const { selectQuery, insertScoutUserQuery } = require("../constants/queries");
 const { queryRunner } = require("../helper/queryRunner");
 const { sendEmail } = require("../helper/emailService");
+require("dotenv").config();
 
 // ###################### user Create #######################################
 exports.signUp = async function (req, res) {
@@ -66,7 +67,7 @@ exports.signIn = async function (req, res) {
 
     const token = jwt.sign(
       { userId: findUser[0][0]?.id, email: findUser[0][0]?.email },
-      "1dikjsaciwndvc",
+      process.env.JWT_SECRET,
       {
         expiresIn: "7d",
       }

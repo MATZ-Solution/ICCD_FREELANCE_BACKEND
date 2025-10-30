@@ -3,6 +3,13 @@ const mySql2 = require("mysql2/promise");
 let pool;
 
 const createPool = async () => {
+  console.log({
+  CONNECTION_LIMIT: Number(process.env.connectionLimit),
+  HOST: process.env.host,
+  PORT: process.env.port,
+  USER: process.env.user,
+  DATABASE: process.env.database,
+});
   if (pool) return pool;
 
   pool = await mySql2.createPool({
@@ -14,13 +21,13 @@ const createPool = async () => {
     // database: "matzsolu_iccd_freelance",
 
     // ######## ------- live database connection ########
-    connectionLimit: 10,
-    host: "93.127.192.89",
-    port: "3306",
-    user: "matzsolu_iccd_freelance_platform",
-    password: "$^+)MLZYc5S)uo",
-    database: "matzsolu_iccd_freelance_platform",
 
+    connectionLimit: process.env.db_connectionLimit,
+    host: process.env.db_host,
+    port: process.env.db_port,
+    user: process.env.db_user,
+    password: process.env.db_password,
+    database: process.env.db_database,
   });
 
   return pool;

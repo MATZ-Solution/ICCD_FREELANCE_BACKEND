@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const { queryRunner } = require("../helper/queryRunner");
 const { selectQuery } = require("../constants/queries");
+require("dotenv").config();
 
 const verifyToken = async (req, res, next) => {
   try {
@@ -12,7 +13,7 @@ const verifyToken = async (req, res, next) => {
     }
 
     const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, "1dikjsaciwndvc");
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const query = ` SELECT id, email, name from users where email = ? `;
     const result = await queryRunner(query, [decoded.email]);
