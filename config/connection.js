@@ -3,13 +3,6 @@ const mySql2 = require("mysql2/promise");
 let pool;
 
 const createPool = async () => {
-  console.log({
-  CONNECTION_LIMIT: Number(process.env.connectionLimit),
-  HOST: process.env.host,
-  PORT: process.env.port,
-  USER: process.env.user,
-  DATABASE: process.env.database,
-});
   if (pool) return pool;
 
   pool = await mySql2.createPool({
