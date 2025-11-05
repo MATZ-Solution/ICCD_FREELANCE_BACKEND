@@ -46,7 +46,7 @@ exports.createOrder = async function (req, res) {
 };
 
 exports.getAllOrderByFreelancer = async (req, res) => {
-  const { freelancerID } = req.params;  // changed from freelancerID to id
+  const { freelancerID } = req.params; // changed from freelancerID to id
   const { search, page = 1 } = req.query;
   const limit = 10;
   const offset = (page - 1) * limit;
@@ -85,7 +85,7 @@ exports.getAllOrderByFreelancer = async (req, res) => {
         statusCode: 200,
         message: "Success",
         data: validResult,
-        totalPages
+        totalPages,
       });
     } else {
       res.status(200).json({
@@ -168,10 +168,17 @@ exports.getAllOrderByClient = async (req, res) => {
     let queryParam = [];
     let baseQuery = ` FROM stripeorders so
         LEFT JOIN gigs g ON g.id = so.gig_id
-        JOIN freelancers f ON  f.id = so.freelancer_id `
+        JOIN freelancers f ON  f.id = so.freelancer_id `;
+    let whereCond = [];
     let whereClause = "";
+    whereCond.push(` so.client_id = ? `);
+    queryParam.push(clientID);
     if (search) {
-      whereClause = ` WHERE so.client_id = ? AND so.isDisputed != 'true' `;
+      whereClause = ` so.isDisputed != 'true' `;
+    }
+    if (whereCond.length > 0) {
+      let concat_whereCond = whereCond.join(" AND ");
+      whereClause += "WHERE" + ` ${concat_whereCond} `;
     }
     let getOrderQuery = `
         SELECT so.id as orderId, so.session_id, so.amount, so.status, so.gig_id, so.base_price,
@@ -182,7 +189,6 @@ exports.getAllOrderByClient = async (req, res) => {
        ${whereClause}
        LIMIT ${limit} OFFSET ${offset}
      `;
-    queryParam.push(clientID);
     // if (search) {
     //   getOrderQuery += ` AND (g.title LIKE ? OR g.description LIKE ?)`;
     //   const searchTerm = `%${search}%`;
@@ -193,12 +199,12 @@ exports.getAllOrderByClient = async (req, res) => {
     const validResult = selectResult[0].filter((item) => item.gigsID !== null);
     if (validResult.length > 0) {
       const countQuery = ` SELECT COUNT(DISTINCT so.id) as total ${baseQuery} ${whereClause} `;
-      const totalPages = await getTotalPage(countQuery, limit);
+      const totalPages = await getTotalPage(countQuery, limit, queryParam);
       res.status(200).json({
         statusCode: 200,
         message: "Success",
         data: validResult,
-        totalPages
+        totalPages,
       });
     } else {
       res.status(200).json({
@@ -252,7 +258,6 @@ exports.getSingleOrderByClient = async (req, res) => {
         packages: packagesResult[0], // array of packages
       },
     });
-
   } catch (error) {
     console.error("Query error: ", error);
     res.status(500).json({
@@ -262,7 +267,6 @@ exports.getSingleOrderByClient = async (req, res) => {
     });
   }
 };
-
 
 exports.getAllOrderByAdmin = async (req, res) => {
   if (!queryRunner) {

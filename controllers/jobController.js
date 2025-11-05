@@ -120,14 +120,14 @@ exports.jobProposalsAction = async function (req, res) {
       const { subject, html } = emailTemplates.jobAccepted;
 
       const [updateJob, updateProposal] = await Promise.all([
-        queryRunner(
-          `UPDATE jobs SET remaining_position = ? WHERE id = ?`,
-          [updatePosition, jobId]
-        ),
-        queryRunner(
-          `UPDATE job_proposals SET status = ? WHERE id = ?`,
-          ["selected", id]
-        ),
+        queryRunner(`UPDATE jobs SET remaining_position = ? WHERE id = ?`, [
+          updatePosition,
+          jobId,
+        ]),
+        queryRunner(`UPDATE job_proposals SET status = ? WHERE id = ?`, [
+          "selected",
+          id,
+        ]),
       ]);
 
       const jobUpdated = updateJob?.[0]?.affectedRows > 0;
@@ -166,7 +166,6 @@ exports.jobProposalsAction = async function (req, res) {
       statusCode: 404,
       message: "No proposals found with the given ID.",
     });
-
   } catch (error) {
     console.error("Job Proposal Action Error:", error);
     return res.status(500).json({
@@ -258,6 +257,8 @@ exports.getAllJob = async (req, res) => {
     let whereCond = [];
     let whereClause = "";
 
+    whereCond.push(` j.status = 'open' `);
+
     if (jobTitle) {
       whereCond.push(` ( j.jobTitle LIKE '%${jobTitle}%' ) `);
     }
@@ -345,7 +346,6 @@ exports.getJobById = async (req, res) => {
 exports.getJobShortlistedCandidates = async (req, res) => {
   const { id } = req.params;
   try {
-
     const query = ` SELECT name, email, experience, fileUrl FROM job_proposals j WHERE status = 'selected' AND jobId = ? `;
     const selectResult = await queryRunner(query, [id]);
 
@@ -373,7 +373,7 @@ exports.getJobShortlistedCandidates = async (req, res) => {
 
 exports.getJobByIdFreelancer = async (req, res) => {
   const { id, freelancerId } = req.query;
- 
+
   try {
     const getProjectQuery = `
     SELECT j.*,
@@ -529,7 +529,7 @@ exports.getJobProposalsByClient = async (req, res) => {
         statusCode: 200,
         message: "Success",
         data: selectResult[0],
-        totalPages: totalPages
+        totalPages: totalPages,
       });
     } else {
       res.status(200).json({

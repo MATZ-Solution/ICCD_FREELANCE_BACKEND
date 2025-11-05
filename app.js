@@ -47,11 +47,14 @@ app.use((req, res, next) => {
 
 app.use(cookieParser());
 app.use(bodyParser.json());
-app.use(cors({ credentials: true, origin: "*" }));
+app.use(cors({ credentials: true, origin: [
+    "https://iccdtalentgate.com",
+    "https://www.iccdtalentgate.com",
+    "http://localhost:5173"
+  ] }));
 
 app.use((req, res, next) => {
   res.header("Cache-Control", "no-cache, no-store, must-revalidate");
-  res.header("Access-Control-Allow-Origin", "*");
   res.header("Pragma", "no-cache");
   res.header("Expires", "0");
   next();
