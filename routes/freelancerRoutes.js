@@ -9,7 +9,10 @@ router.get("/getFreelancerProfile" ,verifyToken, freelancerController.getFreelan
 router.get("/checkIsFreelancer" ,verifyToken, freelancerController.checkIsFreelancer);
 router.get("/getFreelancerDashboardData" , verifyToken ,freelancerController.getFreelancerDashboardData);
 
-router.post("/addProfile" ,verifyToken, s3Upload.array('files', 5), freelancerController.addProfile);
+router.post("/addProfile" ,verifyToken, s3Upload.fields([
+    { name: "files", maxCount: 1 },
+    { name: "portfolio_files", maxCount: 3 },
+  ]), freelancerController.addProfile);
 
 router.put("/editProfile/:freelancerId" ,verifyToken,s3Upload.array('files', 1), freelancerController.editProfile);
 

@@ -10,7 +10,7 @@ exports.checkIsFreelancer = async (req, res) => {
     const selectResult = await queryRunner(getProjectQuery, [userId]);
 
     if (selectResult[0].length > 0) {
-     return res.status(200).json({
+      return res.status(200).json({
         statusCode: 200,
         message: "Success",
         data: selectResult[0],
@@ -70,7 +70,7 @@ exports.getFreelancerProfile = async (req, res) => {
   const { userId } = req.user;
   try {
     const getProjectQuery = `
-    SELECT f.id as freelancerId, f.firstName, f.lastName, f.email, f.about_tagline,about_description, fileUrl, fileKey,
+    SELECT f.id as freelancerId, f.firstName, f.lastName, f.email, f.professionalTitle,f.professionalSummary, fileUrl, fileKey,
     fs.id as skillId, fs.skill, fs.level,  
     fe.id as educationId, fe.university_name, fe.country, fe.degree, fe.major, fe.year as educationYear,
     fl.id as languageId, fl.language_name,
@@ -179,6 +179,13 @@ exports.addProfile = async function (req, res) {
   const {
     firstName,
     lastName,
+    professionalTitle,
+    professionalSummary,
+    categoryOfWork,
+    email,
+    country,
+    city,
+    acknowledge,
     languages,
     about_tagline,
     about_description,
@@ -219,6 +226,34 @@ exports.addProfile = async function (req, res) {
       fields.push(lastName);
       column.push("lastName");
     }
+     if (professionalTitle) {
+      fields.push(professionalTitle);
+      column.push("professionalTitle");
+    }
+     if (professionalSummary) {
+      fields.push(professionalSummary);
+      column.push("professionalSummary");
+    }
+     if (categoryOfWork) {
+      fields.push(categoryOfWork);
+      column.push("categoryOfWork");
+    }
+    if (email) {
+      fields.push(email);
+      column.push("email");
+    }
+    if (country) {
+      fields.push(country);
+      column.push("country");
+    }
+    if (city) {
+      fields.push(city);
+      column.push("city");
+    }
+     if (acknowledge) {
+      fields.push(acknowledge);
+      column.push("acknowledge");
+    }
     if (about_tagline) {
       fields.push(about_tagline);
       column.push("about_tagline");
@@ -227,7 +262,7 @@ exports.addProfile = async function (req, res) {
       fields.push(about_description);
       column.push("about_description");
     }
-     if (userId) {
+    if (userId) {
       fields.push(userId);
       column.push("userId");
     }
@@ -301,12 +336,16 @@ exports.addProfile = async function (req, res) {
         );
       }
     }
+    const { files, portfolio_files } = req.files;
+    console.log("portfolio_files: ", portfolio_files)
+    console.log("req.files: ", req.files)
 
     // Add files into database
     if (freelancerResult && freelancerResult[0].affectedRows > 0) {
       let freelancerId = freelancerResult[0].insertId;
-      if (req.files.length > 0) {
-        for (const file of req.files) {
+      if (files.length > 0) {
+        for (const file of files) {
+          console.log("files: ", file)
           const insertFileResult = await queryRunner(
             `UPDATE freelancers
               SET fileUrl = ?, fileKey = ?, userID = ?
@@ -317,6 +356,20 @@ exports.addProfile = async function (req, res) {
             return res.status(500).json({
               statusCode: 500,
               message: "Failed to add files",
+            });
+          }
+        }
+      }
+      if (portfolio_files.length > 0) {
+        for (const file of portfolio_files) {
+          const insertFileResult = await queryRunner(
+            `INSERT INTO freelancer_portfolio (fileUrl, fileKey, freelancer_id) VALUES (?, ?, ?);`,
+            [file.location, file.key, freelancerId]
+          );
+          if (insertFileResult.affectedRows <= 0) {
+            return res.status(500).json({
+              statusCode: 500,
+              message: "Failed to add portfolio",
             });
           }
         }

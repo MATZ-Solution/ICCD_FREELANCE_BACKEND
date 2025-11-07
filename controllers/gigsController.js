@@ -160,7 +160,7 @@ exports.getAllGigs = async (req, res) => {
     let whereCond = [];
     let whereClause = ""
     if (search) {
-      whereCond.push(` (g.title LIKE '%${search}%' OR g.description LIKE '%${search}%') `);
+      whereCond.push(` (g.professionalTitle LIKE '%${search}%' OR g.category LIKE '%${search}%' OR g.subCategory LIKE '%${search}%' OR g.professionalSummary LIKE '%${search}%') `);
     }
     if(freelancer_id && freelancer_id !== 'undefined'){
       whereCond.push(` freelancer_id != ${freelancer_id} `);
@@ -172,7 +172,7 @@ exports.getAllGigs = async (req, res) => {
     let getProjectQuery = `
       SELECT 
         g.*,
-        f.firstName, f.lastName, f.about_description, f.fileUrl as freelancerImg,
+        f.firstName, f.lastName, f.professionalSummary, f.fileUrl as freelancerImg,
         GROUP_CONCAT(gf.fileUrl) AS fileUrls
       ${baseQuery}
       ${whereClause}
@@ -216,7 +216,7 @@ exports.getSingleGigs = async (req, res) => {
        p.name as packageName, p.description as packageDescription, p.deliveryTime, p.revisions,
         p.price,p.packageType, p.packages as gigPackages,
 
-      f.id as freelancerId, f.userID as freelancerClientId, f.fileUrl as freelancerPic, f.firstName, f.lastName, f.about_tagline, f.about_description,
+      f.id as freelancerId, f.userID as freelancerClientId, f.fileUrl as freelancerPic, f.firstName, f.lastName, f.professionalTitle, f.professionalSummary,
       GROUP_CONCAT(DISTINCT fl.language_name) as FreelancerLanguages
       
       FROM gigs g
@@ -238,8 +238,8 @@ exports.getSingleGigs = async (req, res) => {
       gigsFiles,
       firstName,
       lastName,
-      about_tagline,
-      about_description,
+      professionalTitle,
+      professionalSummary,
       freelancerPic,
       FreelancerLanguages,
       gigsID,
@@ -270,8 +270,8 @@ exports.getSingleGigs = async (req, res) => {
       freelancerDetails: {
         freelancerId: freelancerId,
         freelancerName: firstName + " " + lastName,
-        about_tagline: about_tagline,
-        freelancer_about_description: about_description,
+        professionalTitle: professionalTitle,
+        professionalSummary: professionalSummary,
         FreelancerLanguages,
         FreelancerLanguages,
         freelancerPic: freelancerPic,

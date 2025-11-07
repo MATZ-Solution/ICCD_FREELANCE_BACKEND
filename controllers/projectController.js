@@ -293,7 +293,7 @@ exports.getProjectProposalsByClient = async (req, res) => {
 exports.applyProject = async function (req, res) {
   const { portfolioLinks, paymentTerms, currency, proposedBudget, timeUnit, estimatedTime,
     proposedDeliverables, coverLetter, email, freelancerName,
-     clientId, projectId, freelancerId } = req.body;
+    clientId, projectId, freelancerId, milestonePayment } = req.body;
   const files = req.files;
   try {
     // Add project_proposals into database
@@ -314,6 +314,18 @@ exports.applyProject = async function (req, res) {
       portfolioLinks
     ];
     const insertFileResult = await queryRunner(insertProposalsQuery, values);
+
+    let milestonePaymentArray = JSON.parse(milestonePayment);
+    if (milestonePaymentArray && milestonePaymentArray.length > 0) {
+      for (const i of milestonePaymentArray) {
+        const insertQuery = `INSERT INTO project_proposals_milestone(percentage, duration, freelancer_id) VALUES (?,?,?)`;
+        const queryParams = [i.percentage, i.duration, freelancerId];
+        const insertResult = await queryRunner(
+          insertQuery,
+          queryParams
+        );
+      }
+    }
 
     if (insertFileResult[0].affectedRows > 0) {
       return res.status(200).json({
