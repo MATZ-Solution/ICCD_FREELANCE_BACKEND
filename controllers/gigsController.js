@@ -91,61 +91,6 @@ exports.addGigs = async function (req, res) {
   }
 };
 
-// exports.getAllGigs = async (req, res) => {
-//   const { search, page = 1 } = req.query;
-//   const limit = 12;
-//   const offset = (page - 1) * limit
-//   console.log("req.query1: ", req.query)
-//   let queryParams = [];
-//   try {
-//     let getProjectQuery = `
-//     SELECT
-//         g.*,
-//         f.firstName, f.lastName, f.about_description,f.fileUrl as freelancerImg,
-//         GROUP_CONCAT(gf.fileUrl) AS fileUrls
-//       FROM gigs g
-//       LEFT JOIN freelancers f ON f.id = g.freelancer_id
-//       LEFT JOIN gigsfiles gf ON gf.gigID = g.id
-//       `;
-
-//     if (search) {
-//       getProjectQuery += `WHERE ( g.title LIKE '%${search}%' OR g.description LIKE '%${search}%') `;
-//     }
-//     getProjectQuery += ` GROUP BY g.id `;
-//     const selectResult = await queryRunner(getProjectQuery);
-
-//       let countQuery = `
-//       SELECT COUNT(DISTINCT g.id) AS total
-//       FROM gigs g
-//       LEFT JOIN freelancers f ON f.id = g.freelancer_id
-//       LEFT JOIN gigsfiles gf ON gf.gigID = g.id
-//       ${search ? `WHERE g.title LIKE '%${search}%' OR g.description LIKE '%${search}%'` : ""}
-//     `;
-//     const total = (await queryRunner(countQuery))[0][0].total;
-//     const totalPages = Math.ceil(total / limit);
-
-//     if (selectResult[0].length > 0) {
-//       res.status(200).json({
-//         statusCode: 200,
-//         message: "Success",
-//         data: selectResult[0],
-//       });
-//     } else {
-//       res.status(200).json({
-//         data: [],
-//         message: "Gigs Not Found",
-//       });
-//     }
-//   } catch (error) {
-//     console.error("Query error: ", error);
-//     return res.status(500).json({
-//       statusCode: 500,
-//       message: "Failed to get gigs",
-//       error: error.message,
-//     });
-//   }
-// };
-
 exports.getAllGigs = async (req, res) => {
   const { search, page = 1, freelancer_id } = req.query;
   const limit = 15;
