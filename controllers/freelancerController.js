@@ -70,7 +70,9 @@ exports.getFreelancerProfile = async (req, res) => {
   const { userId } = req.user;
   try {
     const getProjectQuery = `
-    SELECT f.id as freelancerId, f.firstName, f.lastName, f.email, f.professionalTitle,f.professionalSummary, fileUrl, fileKey,
+    SELECT 
+    f.id as freelancerId, f.firstName, f.lastName, f.email, f.professionalTitle,f.professionalSummary, fileUrl, fileKey,
+    f.country as freelancerCountry, f.city as freelancerCity,
     fs.id as skillId, fs.skill, fs.level,  
     fe.id as educationId, fe.university_name, fe.country, fe.degree, fe.major, fe.year as educationYear,
     fl.id as languageId, fl.language_name,
@@ -94,9 +96,11 @@ exports.getFreelancerProfile = async (req, res) => {
       firstName: selectResult[0][0].firstName,
       lastName: selectResult[0][0].lastName,
       email: selectResult[0][0].email,
-      about_tagline: selectResult[0][0].about_tagline,
-      about_description: selectResult[0][0].about_description,
+      professionalTitle: selectResult[0][0].professionalTitle,
+      professionalSummary: selectResult[0][0].professionalSummary,
       fileUrl: selectResult[0][0].fileUrl,
+      freelancerCountry: selectResult[0][0].freelancerCountry,
+      freelancerCity: selectResult[0][0].freelancerCity,
 
       languages: selectResult[0]
         .filter((item) => item.languageId)

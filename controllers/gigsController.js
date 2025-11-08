@@ -160,7 +160,7 @@ exports.getAllGigs = async (req, res) => {
     let whereCond = [];
     let whereClause = ""
     if (search) {
-      whereCond.push(` (g.professionalTitle LIKE '%${search}%' OR g.category LIKE '%${search}%' OR g.subCategory LIKE '%${search}%' OR g.professionalSummary LIKE '%${search}%') `);
+      whereCond.push(` (g.title  LIKE '%${search}%' OR g.category LIKE '%${search}%' OR g.subCategory LIKE '%${search}%' OR g.description LIKE '%${search}%') `);
     }
     if(freelancer_id && freelancer_id !== 'undefined'){
       whereCond.push(` freelancer_id != ${freelancer_id} `);
