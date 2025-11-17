@@ -174,7 +174,7 @@ exports.getAllOrderByClient = async (req, res) => {
     whereCond.push(` so.client_id = ? `);
     queryParam.push(clientID);
     if (search) {
-      whereClause = ` so.isDisputed != 'true' `;
+      whereCond.push(` so.isDisputed != 'true' `);
     }
     if (whereCond.length > 0) {
       let concat_whereCond = whereCond.join(" AND ");
