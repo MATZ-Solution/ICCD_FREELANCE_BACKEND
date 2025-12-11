@@ -25,6 +25,18 @@ const emailTemplates = {
       </div>
     `
   },
+
+  acceptProposals: {
+    subject: "🎉 Your Proposal Has Been Selected",
+    html: (candidateName, projectName) => `
+      <div style="font-family: Arial, sans-serif; color: #333;">
+        <h2 style="color: #4CAF50;">Congratulations, ${candidateName}!</h2>
+        <p>We are pleased to inform you that your proposal for ${projectName} has been selected.</p>
+        <p>Thank you for your time and effort in submitting your proposal. We look forward to collaborating with you on this project.</p>
+        <br>
+      </div>
+    `
+  },
   
   issueReported: {
     subject: "🚨 Issue Report Received — We’re On It!",

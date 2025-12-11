@@ -459,3 +459,39 @@ exports.editProject = async function (req, res) {
     });
   }
 };
+
+exports.projectProposalsAction = async function (req, res) {
+  
+  const { id, name, email, projectName, action } = req.body;
+
+  try {
+    const query = `UPDATE project_proposals SET status = ? WHERE id = ?`;
+    const updateStatus = await queryRunner(query, [action, jobId]);
+    const isUpdated = updateStatus[0]?.affectedRows > 0;
+
+    if (isUpdated) {
+      // send email to freelancers
+      const { subject, html } = emailTemplates.acceptProposals;
+      await sendEmail(email, subject, html(name, projectName));
+
+      return res.status(200).json({
+        statusCode: 200,
+        message: "Successfully updated project proposals status",
+      });
+
+    } else {
+
+      return res.status(404).json({
+        statusCode: 404,
+        message: "Failed to update project proposals status.",
+      });
+
+    }
+  } catch (error) {
+    return res.status(500).json({
+      statusCode: 500,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};

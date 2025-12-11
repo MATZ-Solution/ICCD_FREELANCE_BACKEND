@@ -381,7 +381,7 @@ exports.addProfile = async function (req, res) {
     } else {
       return res.status(200).json({
         statusCode: 200,
-        message: "Failed to add Project",
+        message: "Failed to add Profile",
       });
     }
 
