@@ -11,7 +11,7 @@ const createPool = async () => {
     // port: "3306",
     // user: "root",
     // password: "",
-    // database: "matzsolu_iccd_freelance",
+    // database: "matzsolu_iccd_freelance_platform",
 
     // ######## ------- live database connection ########
 

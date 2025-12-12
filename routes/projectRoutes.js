@@ -8,10 +8,12 @@ router.get("/getAllProject" , projectController.getAllProject);
 router.get("/getProjectByClient" , verifyToken, projectController.getProjectByClient);
 router.get("/getProjectById/:projectId" , projectController.getProjectById);
 router.get("/getProjectPropsalByClient/:projectId" ,verifyToken, projectController.getProjectProposalsByClient);
+router.get("/getAllProject/shortlist/:id", projectController.getProjectShortlistedCandidates);
 
 router.post("/addProject" ,verifyToken, s3Upload.array('files', 5), projectController.addProject);
 router.post("/submitProposals" ,verifyToken, s3Upload.array('files', 5), projectController.applyProject);
 
 router.put("/editProject/:id" ,verifyToken, s3Upload.array('files', 5), projectController.editProject);
+router.put("/projectProposalAction" ,verifyToken, projectController.projectProposalsAction);
 
 module.exports = router;
