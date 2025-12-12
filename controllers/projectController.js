@@ -1,5 +1,7 @@
 const { queryRunner } = require("../helper/queryRunner");
 const { getTotalPage } = require("../helper/getTotalPage");
+const { emailTemplates } = require("../utils/emailTemplates");
+const { sendEmail } = require("../helper/emailService");
 
 exports.addProject = async function (req, res) {
   const { userId } = req.user;
@@ -463,15 +465,20 @@ exports.editProject = async function (req, res) {
 exports.projectProposalsAction = async function (req, res) {
   
   const { id, name, email, projectName, action } = req.body;
-
+  console.log("1")
   try {
     const query = `UPDATE project_proposals SET status = ? WHERE id = ?`;
-    const updateStatus = await queryRunner(query, [action, jobId]);
+    const updateStatus = await queryRunner(query, [action, id]);
     const isUpdated = updateStatus[0]?.affectedRows > 0;
 
     if (isUpdated) {
       // send email to freelancers
       const { subject, html } = emailTemplates.acceptProposals;
+      console.log("email: ", email)
+      console.log("subject: ", subject)
+      console.log("name: ", name)
+      console.log("projectName: ", projectName)
+
       await sendEmail(email, subject, html(name, projectName));
 
       return res.status(200).json({
@@ -499,7 +506,7 @@ exports.projectProposalsAction = async function (req, res) {
 exports.getProjectShortlistedCandidates = async (req, res) => {
   const { id } = req.params;
   try {
-    const query = ` SELECT name, email, experience, fileUrl FROM project_proposals j WHERE status = 'selected' AND jobId = ? `;
+    const query = ` SELECT name, email, fileUrl FROM project_proposals WHERE status = 'selected' AND projectId = ? `;
     const selectResult = await queryRunner(query, [id]);
 
     if (selectResult[0].length > 0) {
@@ -511,14 +518,14 @@ exports.getProjectShortlistedCandidates = async (req, res) => {
     } else {
       res.status(200).json({
         data: [],
-        message: "No Shortlist candidate Found",
+        message: "No Shortlist proposal Found",
       });
     }
   } catch (error) {
     console.error("Query error: ", error);
     return res.status(500).json({
       statusCode: 500,
-      message: "Failed to get shortlist candidate",
+      message: "Failed to get shortlist project proposals",
       error: error.message,
     });
   }
