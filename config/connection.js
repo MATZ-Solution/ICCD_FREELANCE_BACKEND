@@ -7,20 +7,20 @@ const createPool = async () => {
 
   pool = await mySql2.createPool({
     // ######## ------- local database connection ########
-    // host: "localhost",
-    // port: "3306",
-    // user: "root",
-    // password: "",
-    // database: "matzsolu_iccd_freelance_platform",
+    host: "localhost",
+    port: "3306",
+    user: "root",
+    password: "",
+    database: "matzsolu_iccd_freelance_platform",
 
     // ######## ------- live database connection ########
 
-    connectionLimit: process.env.db_connectionLimit,
-    host: process.env.db_host,
-    port: process.env.db_port,
-    user: process.env.db_user,
-    password: process.env.db_password,
-    database: process.env.db_database,
+    // connectionLimit: process.env.db_connectionLimit,
+    // host: process.env.db_host,
+    // port: process.env.db_port,
+    // user: process.env.db_user,
+    // password: process.env.db_password,
+    // database: process.env.db_database,
   });
 
   return pool;

@@ -45,7 +45,7 @@ exports.addProject = async function (req, res) {
     const insertFileResult = await queryRunner(insertProjectQuery, values);
 
     const project_id = insertFileResult[0].insertId;
-    let parsedSkills = JSON.parse(skills)
+    let parsedSkills = JSON.parse(skills);
     if (parsedSkills && parsedSkills.length > 0) {
       for (const skill of parsedSkills) {
         const insertProjectQuery = `INSERT INTO project_skills( name, project_id) VALUES (?,?) `;
@@ -71,7 +71,7 @@ exports.addProject = async function (req, res) {
     // Add files into database
     if (insertFileResult[0].affectedRows > 0) {
       let projectID = insertFileResult[0].insertId;
-      console.log("req.files.length :", req.files.length)
+      console.log("req.files.length :", req.files.length);
       if (req.files.length > 0) {
         for (const file of req.files) {
           const insertFileResult = await queryRunner(
@@ -148,7 +148,7 @@ exports.getProjectByClient = async (req, res) => {
         message: "Success",
         // data: selectResult[0]
         data: filterData,
-        totalPages
+        totalPages,
       });
     } else {
       res.status(200).json({
@@ -197,7 +197,7 @@ exports.getAllProject = async (req, res) => {
         message: "Success",
         // data: selectResult[0]
         data: filterData,
-        totalPages
+        totalPages,
       });
     } else {
       res.status(200).json({
@@ -263,11 +263,12 @@ exports.getProjectProposalsByClient = async (req, res) => {
     f.fileUrl as freelancerImg
     FROM project_proposals pp
     LEFT JOIN freelancers f ON f.id = pp.freelancerId
-    WHERE pp.clientId = ? AND pp.projectId = ?
+    WHERE pp.clientId = ? AND pp.projectId = ? AND pp.status = ?
      `;
     const selectResult = await queryRunner(getProjectQuery, [
       userId,
       projectId,
+      "awaiting",
     ]);
 
     if (selectResult[0].length > 0) {
@@ -293,16 +294,30 @@ exports.getProjectProposalsByClient = async (req, res) => {
 };
 
 exports.applyProject = async function (req, res) {
-  const { portfolioLinks, paymentTerms, currency, proposedBudget, timeUnit, estimatedTime,
-    proposedDeliverables, coverLetter, email, freelancerName,
-    clientId, projectId, freelancerId, milestonePayment } = req.body;
+  const {
+    portfolioLinks,
+    paymentTerms,
+    currency,
+    proposedBudget,
+    timeUnit,
+    estimatedTime,
+    proposedDeliverables,
+    coverLetter,
+    email,
+    freelancerName,
+    clientId,
+    projectId,
+    freelancerId,
+    milestonePayment,
+  } = req.body;
   const files = req.files;
   try {
     // Add project_proposals into database
-    const insertProposalsQuery = `INSERT INTO project_proposals(name, email, fileUrl, fileKey, projectId, clientId, freelancerId, coverLetter, deliverable, budget, currency, paymentTerms, portfolioLinks) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) `;
+    const insertProposalsQuery = `INSERT INTO project_proposals(name, email, status, fileUrl, fileKey, projectId, clientId, freelancerId, coverLetter, deliverable, budget, currency, paymentTerms, portfolioLinks) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?) `;
     const values = [
       freelancerName,
       email,
+      "awaiting",
       files[0].location,
       files[0].key,
       projectId,
@@ -313,7 +328,7 @@ exports.applyProject = async function (req, res) {
       proposedBudget,
       currency,
       paymentTerms,
-      portfolioLinks
+      portfolioLinks,
     ];
     const insertFileResult = await queryRunner(insertProposalsQuery, values);
 
@@ -322,10 +337,7 @@ exports.applyProject = async function (req, res) {
       for (const i of milestonePaymentArray) {
         const insertQuery = `INSERT INTO project_proposals_milestone(percentage, duration, freelancer_id) VALUES (?,?,?)`;
         const queryParams = [i.percentage, i.duration, freelancerId];
-        const insertResult = await queryRunner(
-          insertQuery,
-          queryParams
-        );
+        const insertResult = await queryRunner(insertQuery, queryParams);
       }
     }
 
@@ -463,9 +475,7 @@ exports.editProject = async function (req, res) {
 };
 
 exports.projectProposalsAction = async function (req, res) {
-  
   const { id, name, email, projectName, action } = req.body;
-  console.log("1")
   try {
     const query = `UPDATE project_proposals SET status = ? WHERE id = ?`;
     const updateStatus = await queryRunner(query, [action, id]);
@@ -474,25 +484,17 @@ exports.projectProposalsAction = async function (req, res) {
     if (isUpdated) {
       // send email to freelancers
       const { subject, html } = emailTemplates.acceptProposals;
-      console.log("email: ", email)
-      console.log("subject: ", subject)
-      console.log("name: ", name)
-      console.log("projectName: ", projectName)
-
       await sendEmail(email, subject, html(name, projectName));
 
       return res.status(200).json({
         statusCode: 200,
         message: "Successfully updated project proposals status",
       });
-
     } else {
-
       return res.status(404).json({
         statusCode: 404,
         message: "Failed to update project proposals status.",
       });
-
     }
   } catch (error) {
     return res.status(500).json({
@@ -506,7 +508,7 @@ exports.projectProposalsAction = async function (req, res) {
 exports.getProjectShortlistedCandidates = async (req, res) => {
   const { id } = req.params;
   try {
-    const query = ` SELECT name, email, fileUrl FROM project_proposals WHERE status = 'selected' AND projectId = ? `;
+    const query = ` SELECT name, email, fileUrl, status FROM project_proposals WHERE status = 'accept' AND projectId = ? `;
     const selectResult = await queryRunner(query, [id]);
 
     if (selectResult[0].length > 0) {
